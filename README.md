@@ -21,9 +21,43 @@ Next.jsをいれる準備する
 
     npm install -g npm@11.5.2
 
-以降はNext.jsのGetting Startedに沿って構築
+以降はNext.jsのGetting Startedに沿って構築する
 
     npx create-next-app@latest task-agent --yes
     cd task-agent
     npm run dev
 
+テストツールとして、Vitestを導入する
+ [Next.jsにVitest導入](https://nextjs.org/docs/app/guides/testing/vitest "How to set up Vitest with Next.js")を参考に以下実行
+（※Viteは、Next.jsの競合フレームワークなので必要なし）
+
+    npm install -D vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/dom vite-tsconfig-paths
+
+vitest.config.mtsを以下の通り修正する
+
+```TypeScript:vitest.config.mts
+import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+import tsconfigPaths from 'vite-tsconfig-paths'
+ 
+export default defineConfig({
+  plugins: [tsconfigPaths(), react()],
+  test: {
+    environment: 'jsdom',
+  },
+})
+```
+
+package.jsonにVitest用のコマンドを追記する
+
+```JSON:package.json
+{
+    ...
+    ,
+  "scripts": {
+    ...
+    "test": "vitest"
+  },
+  ...
+}
+```
