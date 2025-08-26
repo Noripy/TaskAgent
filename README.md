@@ -11,9 +11,7 @@ Googleカレンダーのような表形式でなく、円グラフで視覚的�
 
 ## 構築
 
-以下のサイトにアクセスし、Node.jsをインストール
-
-https://nodejs.org/ja/download
+[Node.jsの公式サイト](https://nodejs.org/ja/download "Nodejs.org")にアクセスし、最新のLTSをインストール
 
 インストール完了後、以下入力
 
