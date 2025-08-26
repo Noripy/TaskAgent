@@ -17,5 +17,13 @@ Googleカレンダーのような表形式でなく、円グラフで視覚的�
 
     node -v
 
+Next.jsをいれる準備する
 
+    npm install -g npm@11.5.2
+
+以降はNext.jsのGetting Startedに沿って構築
+
+    npx create-next-app@latest task-agent --yes
+    cd task-agent
+    npm run dev
 
