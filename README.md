@@ -52,12 +52,12 @@ package.jsonにVitest用のコマンドを追記する
 
 ```JSON:package.json
 {
-    ...
-    ,
+
   "scripts": {
-    ...
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
     "test": "vitest"
-  },
-  ...
+  }
 }
 ```
