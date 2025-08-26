@@ -16,6 +16,7 @@ Googleカレンダーのような表形式でなく、円グラフで視覚的�
 https://nodejs.org/ja/download
 
 インストール完了後、以下入力
+
     node -v
 
 
