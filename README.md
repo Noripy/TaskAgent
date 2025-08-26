@@ -28,7 +28,9 @@ Next.jsをいれる準備する
     npm run dev
 
 テストツールとして、Vitestを導入する
+
  [Next.jsにVitest導入](https://nextjs.org/docs/app/guides/testing/vitest "How to set up Vitest with Next.js")を参考に以下実行
+
 （※Viteは、Next.jsの競合フレームワークなので必要なし）
 
     npm install -D vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/dom vite-tsconfig-paths
