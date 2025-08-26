@@ -63,3 +63,22 @@ package.jsonにVitest用のコマンドを追記する
   }
 }
 ```
+
+app/page.tsxにh1タグでHomeを追記する。プロジェクトフォルダ直下にtestフォルダを作成した後、テストコード用のtsxを作成する
+
+```TypeScript:page.test.tsx
+import { expect, test } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import Page from '../app/page'
+ 
+test('Page', () => {
+  render(<Page />)
+  expect(screen.getByRole('heading', { level: 1, name: 'Home' })).toBeDefined()
+})
+```
+
+ターミナルでテストを実行する。PASSと表示されればテストコードの内容がクリアされたことになる
+
+    npm run test
+
+
