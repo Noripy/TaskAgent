@@ -9,6 +9,10 @@ Googleカレンダーのような表形式でなく、円グラフで視覚的�
 - 1日の振り返り（感謝ノート・ジャーナリング）
 
 
+# 構成
+T3 Stackの構成要素に基づき、Next.jsを用いてフロントエンドからバックエンドまでTypeScriptで型安全なアプリケーションで構成する。
+CSSは、TailwindCSSでスタイリングする。
+
 ## 構築
 
 [Node.jsの公式サイト](https://nodejs.org/ja/download "Nodejs.org")にアクセスし、最新のLTSをインストール
@@ -43,7 +47,7 @@ import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
  
 export default defineConfig({
-  plugins: [tsconfigPaths(), react()],
+  plugins: [tsDconfigPaths(), react()],
   test: {
     environment: 'jsdom',
   },
