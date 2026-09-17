@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-pool-workers/types"],
+    "paths": { "@taskagent/core": ["../../packages/core/src/index.ts"] }
+  },
+  "include": ["src/server", "test", "types/cf-env.d.ts"]
+}

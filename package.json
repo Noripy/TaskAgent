@@ -1,0 +1,31 @@
+{
+  "name": "taskagent-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @taskagent/web dev",
+    "build": "pnpm -r build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:unit": "pnpm -r test:unit",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "deploy": "pnpm --filter @taskagent/web deploy",
+    "db:migrate:local": "pnpm --filter @taskagent/web db:migrate:local",
+    "db:migrate:remote": "pnpm --filter @taskagent/web db:migrate:remote"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "typescript": "5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ]
+  }
+}
