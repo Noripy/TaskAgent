@@ -1,6 +1,7 @@
-import type { Memo } from "@taskagent/core";
+import type { Insight, Memo } from "@taskagent/core";
 import { useCallback, useEffect, useState } from "react";
 import { api, type PublicUser, readError } from "../api.js";
+import { CopyButton } from "../components/CopyButton.js";
 import { MemoCard } from "../components/MemoCard.js";
 
 type MemoItem = { id: string; created_at: string; memo: Memo };
@@ -9,7 +10,7 @@ type DigestInfo = {
   commit_sha: string | null;
   committed_at: string | null;
   last_error: string | null;
-  insight: { good: string[]; actions: string[]; message: string } | null;
+  insight: Insight | null;
 } | null;
 
 function todayYmd(tz: string): string {
@@ -24,6 +25,11 @@ function shiftDate(ymd: string, days: number): string {
   const d = new Date(`${ymd}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
+}
+function humanDate(ymd: string): string {
+  const [y, m, d] = ymd.split("-").map(Number) as [number, number, number];
+  const w = ["日", "月", "火", "水", "木", "金", "土"][new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  return `${m}月${d}日（${w}）`;
 }
 
 export function TodayPage(props: { user: PublicUser; onGoSettings: () => void }) {
@@ -63,7 +69,7 @@ export function TodayPage(props: { user: PublicUser; onGoSettings: () => void })
         path?: string;
       };
       if (j.status === "committed") setMsg(`コミットしました: ${j.path}`);
-      else if (j.status === "skipped") setMsg(`スキップ: ${j.reason}`);
+      else if (j.status === "skipped") setMsg(`変更なし（${j.reason}）`);
       else setMsg(`失敗: ${j.error ?? (await readError(res))}`);
       await load();
     } finally {
@@ -78,100 +84,88 @@ export function TodayPage(props: { user: PublicUser; onGoSettings: () => void })
   };
 
   const repoConfigured = !!(props.user.repo_owner && props.user.repo_name);
+  const insight = digest?.insight ?? null;
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setDate(shiftDate(date, -1))}
-            className="rounded px-2 py-1 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800"
-          >
-            ‹
-          </button>
-          <h2 className="text-xl font-semibold tabular-nums">{date}</h2>
-          <button
-            type="button"
-            onClick={() => setDate(shiftDate(date, 1))}
-            className="rounded px-2 py-1 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800"
-          >
-            ›
-          </button>
-        </div>
-        <span className="text-xs text-slate-500">{memos.length} 件</span>
+        <button
+          type="button"
+          onClick={() => setDate(shiftDate(date, -1))}
+          className="ta-btn"
+          aria-label="前の日"
+        >
+          ‹
+        </button>
+        <h2 className="ta-h1 text-center">
+          {humanDate(date)}
+          <span className="ta-muted block text-base font-normal">{memos.length} 件のメモ</span>
+        </h2>
+        <button
+          type="button"
+          onClick={() => setDate(shiftDate(date, 1))}
+          className="ta-btn"
+          aria-label="次の日"
+        >
+          ›
+        </button>
       </div>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
-        {!repoConfigured ? (
-          <div className="flex items-center justify-between">
-            <span>GitHub リポジトリが未設定です。</span>
-            <button type="button" onClick={props.onGoSettings} className="text-cyan-600 underline">
-              設定する
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <div className="text-xs text-slate-500">GitHub</div>
-              <div className="font-mono text-xs">{path}</div>
-              <div className="mt-1 text-xs">
-                {digest?.status === "committed" && (
-                  <span className="text-emerald-600">
-                    コミット済み {digest.commit_sha?.slice(0, 7)}
-                  </span>
-                )}
-                {digest?.status === "failed" && (
-                  <span className="text-red-600">失敗: {digest.last_error}</span>
-                )}
-                {!digest && (
-                  <span className="text-slate-500">
-                    未コミット（{props.user.digest_hour}:00 に自動）
-                  </span>
-                )}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={commitNow}
-              disabled={busy || memos.length === 0}
-              className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-40 dark:bg-white dark:text-slate-900"
-            >
-              {busy ? "処理中…" : "今すぐコミット"}
-            </button>
-          </div>
-        )}
-        {msg && <div className="mt-2 text-xs text-slate-600 dark:text-slate-300">{msg}</div>}
-      </section>
+      {!repoConfigured && (
+        <div className="rounded-xl bg-warn-soft p-3" style={{ color: "var(--ta-warn)" }}>
+          GitHub の保存先が未設定です。{" "}
+          <button type="button" onClick={props.onGoSettings} className="ta-link underline">
+            設定する
+          </button>
+        </div>
+      )}
 
-      {digest?.insight && (
-        <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm dark:border-emerald-900 dark:bg-emerald-950/30">
-          <div className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-            今日の振り返り
+      {insight && (
+        <section className="ta-card space-y-4" aria-label="今日の振り返り">
+          <h3 className="ta-h2">今日の振り返り</h3>
+          <div>
+            <div className="ta-label" style={{ color: "var(--ta-good)" }}>
+              良かったこと
+            </div>
+            <ul className="list-disc space-y-1 pl-5 text-lg">
+              {insight.good.map((g) => (
+                <li key={g}>{g}</li>
+              ))}
+            </ul>
           </div>
-          <div className="mt-2 font-medium">良かったこと</div>
-          <ul className="list-disc pl-5">
-            {digest.insight.good.map((g) => (
-              <li key={g}>{g}</li>
-            ))}
-          </ul>
-          <div className="mt-2 font-medium">明日の最初の一歩</div>
-          <ul className="list-disc pl-5">
-            {digest.insight.actions.map((a) => (
-              <li key={a}>{a}</li>
-            ))}
-          </ul>
-          <p className="mt-2 italic text-emerald-800 dark:text-emerald-200">
-            {digest.insight.message}
-          </p>
+          <div>
+            <div className="ta-label">明日の最初の一歩</div>
+            <ul className="space-y-1">
+              {insight.actions.map((a) => (
+                <li key={a} className="flex items-start gap-3 text-lg">
+                  <span className="ta-check" aria-hidden="true" />
+                  <span>{a}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {(insight.communication.focus || insight.communication.phrase) && (
+            <div className="space-y-2">
+              <div className="ta-label">伝え方の改善点</div>
+              {insight.communication.focus && (
+                <p className="text-lg">{insight.communication.focus}</p>
+              )}
+              {insight.communication.phrase && (
+                <>
+                  <div className="ta-muted text-sm">明日使うフレーズ</div>
+                  <p className="ta-quote">{insight.communication.phrase}</p>
+                  <CopyButton text={insight.communication.phrase} label="フレーズをコピー" />
+                </>
+              )}
+            </div>
+          )}
+          <p className="ta-muted italic">{insight.message}</p>
         </section>
       )}
 
-      <section className="space-y-3">
+      <section className="space-y-4" aria-label="メモ">
         {memos.length === 0 && (
-          <p className="text-sm text-slate-500">
-            この日のメモはまだありません。「投げる」から 1 件どうぞ。
-          </p>
+          <p className="ta-muted">この日のメモはまだありません。「投げる」から 1 件どうぞ。</p>
         )}
         {memos.map((m) => (
           <MemoCard
@@ -182,6 +176,37 @@ export function TodayPage(props: { user: PublicUser; onGoSettings: () => void })
           />
         ))}
       </section>
+
+      {repoConfigured && (
+        <section className="ta-card ta-secondary space-y-2" aria-label="GitHub への保存">
+          <div className="ta-label">GitHub への保存</div>
+          <div className="ta-muted break-all text-sm">{path}</div>
+          <div>
+            {digest?.status === "committed" && (
+              <span style={{ color: "var(--ta-good)" }}>
+                コミット済み {digest.commit_sha?.slice(0, 7)}
+              </span>
+            )}
+            {digest?.status === "failed" && (
+              <span style={{ color: "var(--ta-danger)" }}>失敗: {digest.last_error}</span>
+            )}
+            {!digest && (
+              <span className="ta-muted">
+                未コミット（毎日 {props.user.digest_hour}:00 に自動）
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={commitNow}
+            disabled={busy || memos.length === 0}
+            className="ta-btn"
+          >
+            {busy ? "処理中…" : "今すぐコミット"}
+          </button>
+          {msg && <p className="ta-muted text-sm">{msg}</p>}
+        </section>
+      )}
     </div>
   );
 }

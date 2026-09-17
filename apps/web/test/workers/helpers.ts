@@ -104,6 +104,12 @@ export function readyReply(title = "先輩レビュー") {
       people: ["田中さん"],
       tags: ["資料"],
       horenso: { kind: "報告", to: "田中さん", draft: "構成を修正しました。" },
+      communication: {
+        said: "あの、順番がちょっと…",
+        better: "構成を見直します。理由は流れが分かりにくいためです。目次案を明日お見せします。",
+        vocabulary: [{ word: "所感", usage: "報告の末尾で自分の見立てを添えるとき" }],
+        delivery_tip: "結論を最初の 1 文で言い切る",
+      },
     },
   });
 }
@@ -117,5 +123,6 @@ export function insightReply() {
     good: ["相談できた"],
     actions: ["田中さんに 3 行で報告する"],
     message: "70 点で出そう。",
+    communication: { focus: "結論から話す", phrase: "結論からお伝えすると、〜です。" },
   });
 }

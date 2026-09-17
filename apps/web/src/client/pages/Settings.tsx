@@ -36,25 +36,25 @@ export function SettingsPage(props: { user: PublicUser; onSaved: (u: PublicUser)
     hint?: string,
     type: "text" | "number" = "text",
   ) => (
-    <label className="block text-sm">
-      <span className="font-medium">{label}</span>
+    <label className="block">
+      <span className="ta-label">{label}</span>
       <input
         type={type}
         value={form[key]}
         onChange={(e) =>
           setForm({ ...form, [key]: type === "number" ? Number(e.target.value) : e.target.value })
         }
-        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
+        className="ta-input"
       />
-      {hint && <span className="text-xs text-slate-500">{hint}</span>}
+      {hint && <span className="ta-muted text-sm">{hint}</span>}
     </label>
   );
 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold">メモの保存先</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h2 className="ta-h1">メモの保存先</h2>
+        <p className="ta-muted mt-1">
           あなたの GitHub リポジトリに、1 日 1 ファイルの Markdown
           としてコミットします。先にリポジトリを作っておいてください（private 推奨）。
         </p>
@@ -67,21 +67,19 @@ export function SettingsPage(props: { user: PublicUser; onSaved: (u: PublicUser)
         {field("タイムゾーン", "timezone", "IANA 名。例: Asia/Tokyo")}
         {field("自動コミット時刻（時）", "digest_hour", "0〜23。現地時刻。", "number")}
       </div>
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={save}
-          disabled={busy}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-slate-900"
-        >
-          {busy ? "確認中…" : "保存して権限を確認"}
-        </button>
-        {msg && (
-          <span className={`text-sm ${msg.ok ? "text-emerald-600" : "text-red-600"}`}>
-            {msg.text}
-          </span>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={save}
+        disabled={busy}
+        className="ta-btn ta-btn-primary w-full sm:w-auto"
+      >
+        {busy ? "確認中…" : "保存して権限を確認"}
+      </button>
+      {msg && (
+        <p role="status" style={{ color: msg.ok ? "var(--ta-good)" : "var(--ta-danger)" }}>
+          {msg.text}
+        </p>
+      )}
     </div>
   );
 }

@@ -14,6 +14,8 @@ Cloudflare の無料枠だけで動きます。
 | タスクを分解できない | 「最初の一歩」を 15 分以内の粒度で提案 |
 | 記録が散らばって振り返れない | 1 日 1 ファイルの Markdown を、あなたの GitHub リポジトリに毎日自動コミット |
 | 自分の良かったところに気づけない | 日次で「良かったこと」「明日の行動」を 3 つずつ提案 |
+| 語彙が足りず、伝え方が下手だと言われる | メモごとに「こう言うと伝わる」言い換え・使える語彙（最大 3）・コツ 1 つ。日次で癖を 1 つ指摘し、明日使うフレーズを提案 |
+| 疲れていて画面を読むのがつらい | 「おつかれモード」で文字を大きく、二次情報を隠す。読む順番を固定した UI |
 
 ## 構成（詳細は `docs/design-docs/`）
 
@@ -28,6 +30,7 @@ Browser (React SPA) ──▶ Cloudflare Workers (Hono API) ──▶ D1 (SQLite
 - [02 業務フロー図](docs/design-docs/02-business-flow.md)
 - [03 ER 図](docs/design-docs/03-er-diagram.md)
 - [04 技術選定（候補比較とメリット・デメリット）](docs/design-docs/04-tech-selection.md)
+- [05 UI 設計（疲れていても読める画面）](docs/design-docs/05-ui-design.md)
 - [ADR 一覧](docs/design-docs/adr/)
 
 ## セットアップ（ローカル 10 分）

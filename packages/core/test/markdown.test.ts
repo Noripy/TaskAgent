@@ -67,7 +67,12 @@ describe("renderDailyDigest", () => {
       date: "2026-09-17",
       timeZone: "Asia/Tokyo",
       memos: [later, rec],
-      insight: { good: ["相談できた"], actions: ["3 行で報告する"], message: "70 点で出そう。" },
+      insight: {
+        good: ["相談できた"],
+        actions: ["3 行で報告する"],
+        message: "70 点で出そう。",
+        communication: { focus: null, phrase: null },
+      },
     });
     expect(md.startsWith("---\ndate: 2026-09-17\n")).toBe(true);
     expect(md).toContain("## 今日の振り返り");

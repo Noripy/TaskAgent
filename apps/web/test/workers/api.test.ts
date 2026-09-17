@@ -205,6 +205,10 @@ describe("API", () => {
     expect(md).toContain("# 2026-09-17 の記録");
     expect(md).toContain("## 今日の振り返り");
     expect(md).toContain("### 先輩レビュー");
+    expect(md).toContain("**伝え方**");
+    expect(md).toContain("言い換え: 構成を見直します");
+    expect(md).toContain("**伝え方の改善点**");
+    expect(md).toContain("明日使うフレーズ: 「結論からお伝えすると、〜です。」");
 
     // 2 回目は変更なしでスキップ（GitHub にも Gemini にも追加リクエストしない）
     const before = ext.calls.length;

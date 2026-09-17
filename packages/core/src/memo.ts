@@ -28,6 +28,37 @@ export const HorensoSchema = z.object({
 });
 export type Horenso = z.infer<typeof HorensoSchema>;
 
+/**
+ * 語彙力・伝え方の観点。「何と言ったか」→「どう言い換えるか」→「使える語彙」→「次に意識するコツ 1 つ」。
+ * 説教にならないよう、コツは 1 つに絞る。
+ */
+export const VocabularySchema = z.object({
+  word: z.string().min(1).max(40),
+  /** 意味ではなく「使う場面」を書く。使えないと覚えない。 */
+  usage: z.string().min(1).max(120),
+});
+export type Vocabulary = z.infer<typeof VocabularySchema>;
+
+export const CommunicationSchema = z.object({
+  /** ユーザーが実際に言った／書いた表現（入力から分かる場合）。 */
+  said: z.string().max(300).nullable().default(null),
+  /** 相手に伝わる言い換え。結論 → 理由 → 依頼 の順。 */
+  better: z.string().max(400).nullable().default(null),
+  /** 今回使える・覚えたい語彙。最大 3 個。 */
+  vocabulary: z.array(VocabularySchema).max(3).default([]),
+  /** 伝え方のコツ。1 つだけ。 */
+  delivery_tip: z.string().max(200).nullable().default(null),
+});
+export type Communication = z.infer<typeof CommunicationSchema>;
+
+export function emptyCommunication(): Communication {
+  return { said: null, better: null, vocabulary: [], delivery_tip: null };
+}
+
+export function hasCommunication(c: Communication): boolean {
+  return !!(c.said || c.better || c.vocabulary.length || c.delivery_tip);
+}
+
 export const MemoSchema = z.object({
   title: z.string().min(1).max(80),
   /** 1〜2 文の要約。事実ベース。 */
@@ -44,6 +75,8 @@ export const MemoSchema = z.object({
   people: z.array(z.string().min(1).max(60)).max(10),
   tags: z.array(z.string().min(1).max(30)).max(8),
   horenso: HorensoSchema,
+  /** 語彙力・伝え方。旧データには無いので既定値で補う。 */
+  communication: CommunicationSchema.default(() => emptyCommunication()),
 });
 export type Memo = z.infer<typeof MemoSchema>;
 
@@ -59,5 +92,6 @@ export function emptyMemo(): Memo {
     people: [],
     tags: [],
     horenso: { kind: "なし", to: null, draft: null },
+    communication: emptyCommunication(),
   };
 }

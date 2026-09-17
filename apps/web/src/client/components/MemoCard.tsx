@@ -1,100 +1,162 @@
 import type { Memo } from "@taskagent/core";
+import { CopyButton } from "./CopyButton.js";
 
+/**
+ * 疲れていても読める順番で並べる:
+ * 1. タイトルと要約（何の話か）
+ * 2. 最初の一歩（今すぐやること）
+ * 3. 報連相の下書き（コピーして送る）
+ * 4. 伝え方（言い換え・語彙・コツ）
+ * 5. 良かったこと
+ * 6. くわしく（事実・Try・関係者・タグ）は折りたたみ。おつかれモードでは非表示。
+ */
 export function MemoCard(props: {
   memo: Memo;
   createdAt?: string | undefined;
   onDelete?: (() => void) | undefined;
 }) {
   const m = props.memo;
-  return (
-    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-semibold">{m.title}</h3>
-        {props.onDelete && (
-          <button
-            type="button"
-            onClick={props.onDelete}
-            className="text-xs text-slate-400 hover:text-red-500"
-          >
-            削除
-          </button>
-        )}
-      </div>
-      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{m.summary}</p>
+  const c = m.communication;
+  const hasComm = !!(c.said || c.better || c.vocabulary.length || c.delivery_tip);
+  const [first, ...rest] = m.next_actions;
 
-      {m.facts.length > 0 && <Section title="事実" items={m.facts} />}
-      {m.keep.length > 0 && <Section title="良かったこと" items={m.keep} tone="good" />}
-      {m.try.length > 0 && <Section title="次に試すこと" items={m.try} />}
-      {m.next_actions.length > 0 && (
-        <div className="mt-3">
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            最初の一歩（15 分以内）
+  return (
+    <article className="ta-card space-y-4">
+      <header>
+        <h3 className="ta-h2">{m.title}</h3>
+        <p className="mt-1">{m.summary}</p>
+      </header>
+
+      {first && (
+        <section aria-label="最初の一歩">
+          <div className="ta-label">最初の一歩（15 分以内）</div>
+          <div className="flex items-start gap-3 text-lg">
+            <span className="ta-check" aria-hidden="true" />
+            <span>
+              {first.text}
+              <span className="ta-muted ml-2 text-base">
+                {first.minutes}分{first.due ? ` · ${first.due} まで` : ""}
+              </span>
+            </span>
           </div>
-          <ul className="mt-1 space-y-1 text-sm">
-            {m.next_actions.map((a) => (
-              <li key={a.text} className="flex items-start gap-2">
-                <span className="mt-0.5 inline-block h-4 w-4 shrink-0 rounded border border-slate-300" />
-                <span>
-                  {a.text}
-                  <span className="ml-1 text-xs text-slate-500">
-                    {a.minutes}分{a.due ? ` · ${a.due} まで` : ""}
+          {rest.length > 0 && (
+            <ul className="ta-secondary mt-2 space-y-1 pl-1">
+              {rest.map((a) => (
+                <li key={a.text} className="flex items-start gap-3">
+                  <span className="ta-check" aria-hidden="true" />
+                  <span>
+                    {a.text}
+                    <span className="ta-muted ml-2 text-sm">{a.minutes}分</span>
                   </span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
-      {m.horenso.kind !== "なし" && (
-        <div className="mt-3 rounded-lg bg-cyan-50 p-3 text-sm dark:bg-cyan-950/40">
-          <div className="text-xs font-medium text-cyan-800 dark:text-cyan-300">
+
+      {m.horenso.kind !== "なし" && m.horenso.draft && (
+        <section aria-label="報連相の下書き" className="space-y-2">
+          <div className="ta-label">
             {m.horenso.kind}
             {m.horenso.to ? ` → ${m.horenso.to}` : ""}
           </div>
-          {m.horenso.draft && <p className="mt-1 whitespace-pre-wrap">{m.horenso.draft}</p>}
-          {m.horenso.draft && (
-            <button
-              type="button"
-              className="mt-2 text-xs text-cyan-700 underline dark:text-cyan-300"
-              onClick={() => navigator.clipboard?.writeText(m.horenso.draft ?? "")}
-            >
-              下書きをコピー
-            </button>
+          <p className="ta-quote">{m.horenso.draft}</p>
+          <CopyButton text={m.horenso.draft} label="下書きをコピー" />
+        </section>
+      )}
+
+      {hasComm && (
+        <section aria-label="伝え方" className="space-y-2">
+          <div className="ta-label">伝え方</div>
+          {c.better && (
+            <div>
+              <div className="ta-muted text-sm">こう言うと伝わる</div>
+              <p className="ta-quote">{c.better}</p>
+            </div>
           )}
-        </div>
+          {c.said && (
+            <div className="ta-secondary">
+              <div className="ta-muted text-sm">あなたの言い方</div>
+              <p className="ta-muted">{c.said}</p>
+            </div>
+          )}
+          {c.vocabulary.length > 0 && (
+            <ul className="space-y-1">
+              {c.vocabulary.map((v) => (
+                <li key={v.word}>
+                  <span className="ta-chip mr-2 font-semibold">{v.word}</span>
+                  <span className="ta-muted">{v.usage}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {c.delivery_tip && (
+            <p>
+              <span className="ta-label inline">コツ</span> {c.delivery_tip}
+            </p>
+          )}
+        </section>
       )}
-      {(m.people.length > 0 || m.tags.length > 0) && (
-        <div className="mt-3 flex flex-wrap gap-1 text-xs text-slate-500">
-          {m.people.map((p) => (
-            <span key={p} className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">
-              {p}
+
+      {m.keep.length > 0 && (
+        <section aria-label="良かったこと" className="rounded-xl bg-good-soft p-3">
+          <div className="ta-label" style={{ color: "var(--ta-good)" }}>
+            良かったこと
+          </div>
+          <ul className="list-disc space-y-0.5 pl-5">
+            {m.keep.map((s) => (
+              <li key={s}>{s}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <details className="ta-details ta-secondary">
+        <summary>くわしく（事実・次に試すこと・関係者）</summary>
+        <div className="space-y-3 pt-2">
+          {m.facts.length > 0 && <List title="事実" items={m.facts} />}
+          {m.try.length > 0 && <List title="次に試すこと" items={m.try} />}
+          {(m.people.length > 0 || m.tags.length > 0) && (
+            <div className="flex flex-wrap gap-2">
+              {m.people.map((p) => (
+                <span key={p} className="ta-chip">
+                  {p}
+                </span>
+              ))}
+              {m.tags.map((t) => (
+                <span key={t} className="ta-chip">
+                  #{t}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="ta-muted flex items-center justify-between text-sm">
+            <span>
+              {props.createdAt ? new Date(props.createdAt).toLocaleTimeString("ja-JP") : ""}
             </span>
-          ))}
-          {m.tags.map((t) => (
-            <span key={t} className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">
-              #{t}
-            </span>
-          ))}
+            {props.onDelete && (
+              <button
+                type="button"
+                onClick={props.onDelete}
+                className="ta-btn ta-btn-quiet"
+                style={{ color: "var(--ta-danger)" }}
+              >
+                このメモを削除
+              </button>
+            )}
+          </div>
         </div>
-      )}
-      {props.createdAt && (
-        <div className="mt-2 text-right text-[11px] text-slate-400">
-          {new Date(props.createdAt).toLocaleTimeString("ja-JP")}
-        </div>
-      )}
+      </details>
     </article>
   );
 }
 
-function Section(props: { title: string; items: string[]; tone?: "good" }) {
+function List(props: { title: string; items: string[] }) {
   return (
-    <div className="mt-3">
-      <div
-        className={`text-xs font-medium uppercase tracking-wide ${props.tone === "good" ? "text-emerald-600" : "text-slate-500"}`}
-      >
-        {props.title}
-      </div>
-      <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm">
+    <div>
+      <div className="ta-label">{props.title}</div>
+      <ul className="list-disc space-y-0.5 pl-5">
         {props.items.map((s) => (
           <li key={s}>{s}</li>
         ))}

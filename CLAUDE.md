@@ -28,5 +28,6 @@ pnpm lint:fix      # Biome で整形
 4. 秘密情報は `wrangler secret` / `.dev.vars` のみ。コードやドキュメントに書かない。
 5. 1 PR = 1 関心事。`packages/core` と `apps/web` を同時に大改修しない。
 6. 迷ったら `docs/product/persona.md` のユーザー（20 代・完璧主義・過集中）にとって「最初の一歩が小さくなるか」で判断。
+7. UI は `docs/design-docs/05-ui-design.md` の原則（大きい文字・固定した読む順番・二次情報は `.ta-secondary`）に従う。
 
 詳細ルールはパス別に `.claude/rules/` に分割されている（該当ファイルを触るときだけ読み込まれる）。

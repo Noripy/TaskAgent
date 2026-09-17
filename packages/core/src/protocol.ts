@@ -66,6 +66,13 @@ export const InsightSchema = z.object({
   actions: z.array(z.string().min(1).max(200)).min(1).max(3),
   /** ひとことメッセージ（完璧主義を緩める）。 */
   message: z.string().min(1).max(200),
+  /** 伝え方の改善点（1 つ）と、明日使うフレーズ（1 つ）。 */
+  communication: z
+    .object({
+      focus: z.string().max(200).nullable().default(null),
+      phrase: z.string().max(200).nullable().default(null),
+    })
+    .default(() => ({ focus: null, phrase: null })),
 });
 export type Insight = z.infer<typeof InsightSchema>;
 
@@ -155,6 +162,13 @@ export const INSIGHT_RESPONSE_JSON_SCHEMA = {
     good: { type: "ARRAY", items: { type: "STRING" } },
     actions: { type: "ARRAY", items: { type: "STRING" } },
     message: { type: "STRING" },
+    communication: {
+      type: "OBJECT",
+      properties: {
+        focus: { type: "STRING", nullable: true },
+        phrase: { type: "STRING", nullable: true },
+      },
+    },
   },
-  required: ["good", "actions", "message"],
+  required: ["good", "actions", "message", "communication"],
 } as const;

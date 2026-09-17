@@ -1,4 +1,4 @@
-import type { Memo } from "./memo.js";
+import { hasCommunication, type Memo } from "./memo.js";
 import type { Insight } from "./protocol.js";
 
 export interface MemoRecord {
@@ -32,6 +32,17 @@ export function renderMemoMarkdown(rec: MemoRecord): string {
   if (m.horenso.kind !== "なし") {
     out.push("", `**${m.horenso.kind}${m.horenso.to ? ` → ${m.horenso.to}` : ""}**`, "");
     if (m.horenso.draft) out.push("> " + m.horenso.draft.split("\n").join("\n> "));
+  }
+  if (hasCommunication(m.communication)) {
+    const c = m.communication;
+    out.push("", "**伝え方**", "");
+    if (c.said) out.push(`- 言った: ${c.said}`);
+    if (c.better) out.push(`- 言い換え: ${c.better}`);
+    if (c.vocabulary.length) {
+      out.push("- 語彙:");
+      out.push(c.vocabulary.map((v) => `  - ${v.word} — ${v.usage}`).join("\n"));
+    }
+    if (c.delivery_tip) out.push(`- コツ: ${c.delivery_tip}`);
   }
   const meta: string[] = [];
   if (m.people.length) meta.push(`関係者: ${m.people.join(", ")}`);
@@ -70,6 +81,15 @@ export function renderDailyDigest(input: DigestInput): string {
     out.push("");
     out.push(input.insight.actions.map((a) => `- [ ] ${a}`).join("\n"));
     out.push("");
+    if (input.insight.communication.focus || input.insight.communication.phrase) {
+      out.push("**伝え方の改善点**");
+      out.push("");
+      if (input.insight.communication.focus) out.push(`- ${input.insight.communication.focus}`);
+      if (input.insight.communication.phrase) {
+        out.push(`- 明日使うフレーズ: 「${input.insight.communication.phrase}」`);
+      }
+      out.push("");
+    }
     out.push(`> ${input.insight.message}`);
     out.push("");
   }

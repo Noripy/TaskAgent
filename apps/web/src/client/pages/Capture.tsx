@@ -90,115 +90,107 @@ export function CapturePage(props: { onSaved: () => void }) {
     setError(null);
   };
 
+  const onEnter = (fn: () => void) => (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") fn();
+  };
+
   return (
-    <div className="space-y-6">
-      <section>
-        <h2 className="text-xl font-semibold">言われたこと・気づいたことを、そのまま投げる</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          整えなくていい。単語の羅列でも OK。足りないところは AI が最大 3 回だけ聞き返します。
-        </p>
-        <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-          社外秘の情報（顧客名・金額・未公開情報）はぼかして書いてください。AI に送信されます。
-        </p>
-        {phase.kind === "idle" && (
-          <div className="mt-3 space-y-3">
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submit();
-              }}
-              rows={5}
-              placeholder="例: 田中さんに資料の順番おかしいって言われた 金曜まで 目次から直す？"
-              className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm focus:border-cyan-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900"
-            />
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400">⌘/Ctrl + Enter で送信</span>
-              <button
-                type="button"
-                onClick={submit}
-                disabled={busy || !text.trim()}
-                className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50"
-              >
-                {busy ? "考え中…" : "投げる"}
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
+    <div className="space-y-5">
+      {phase.kind === "idle" && (
+        <section className="space-y-3">
+          <h2 className="ta-h1">言われたこと、気づいたことを、そのまま投げる</h2>
+          <p className="ta-muted">
+            整えなくていい。単語の羅列でも大丈夫。足りないところは最大 3 回だけ聞き返します。
+          </p>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={onEnter(submit)}
+            rows={6}
+            aria-label="入力"
+            placeholder="例: 田中さんに資料の順番おかしいって言われた 金曜まで 目次から直す？"
+            className="ta-input"
+          />
+          <button
+            type="button"
+            onClick={submit}
+            disabled={busy || !text.trim()}
+            className="ta-btn ta-btn-primary w-full"
+          >
+            {busy ? "考え中…" : "投げる"}
+          </button>
+          <p className="ta-secondary ta-muted text-sm">
+            ⌘/Ctrl + Enter で送信。社外秘（顧客名・金額・未公開情報）はぼかして書いてください。AI
+            に送信されます。
+          </p>
+        </section>
+      )}
 
       {phase.kind === "asking" && (
-        <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-          <div className="mb-3 rounded-lg bg-slate-100 p-3 text-sm dark:bg-slate-800">
-            <div className="text-xs text-slate-500">あなたの入力</div>
-            <p className="whitespace-pre-wrap">{text}</p>
+        <section className="ta-card space-y-4">
+          <div className="ta-secondary">
+            <div className="ta-label">あなたの入力</div>
+            <p className="ta-muted whitespace-pre-wrap">{text}</p>
           </div>
-          {phase.log.map((l) => (
-            <div key={l.id} className={`mb-2 text-sm ${l.role === "user" ? "text-right" : ""}`}>
-              <span
-                className={`inline-block rounded-lg px-3 py-2 ${l.role === "user" ? "bg-cyan-100 dark:bg-cyan-900/50" : "bg-slate-100 dark:bg-slate-800"}`}
-              >
-                {l.text}
-              </span>
+          {phase.log.length > 0 && (
+            <div className="ta-secondary space-y-2">
+              {phase.log.map((l) => (
+                <div key={l.id} className={l.role === "user" ? "text-right" : ""}>
+                  <span className="ta-chip whitespace-pre-wrap text-left">
+                    {l.role === "user" ? "あなた: " : "質問: "}
+                    {l.text}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
-          <div className="text-xs text-slate-500">
-            確認 {phase.round}/3 — 分かる範囲で答えれば十分です
+          )}
+          <div>
+            <div className="ta-label">確認 {phase.round} / 3</div>
+            <ul className="list-disc space-y-1 pl-5 text-lg">
+              {phase.questions.map((q) => (
+                <li key={q}>{q}</li>
+              ))}
+            </ul>
+            <p className="ta-muted mt-1 text-sm">
+              分かる範囲で答えれば十分です。分からなければ「不明」と書いてください。
+            </p>
           </div>
-          <ul className="mt-1 list-disc pl-5 text-sm">
-            {phase.questions.map((q) => (
-              <li key={q}>{q}</li>
-            ))}
-          </ul>
           <textarea
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") reply();
-            }}
+            onKeyDown={onEnter(reply)}
             rows={3}
+            aria-label="回答"
             placeholder="例: 田中さん（先輩）。金曜 17 時まで。"
-            className="mt-3 w-full rounded-lg border border-slate-300 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+            className="ta-input"
           />
-          <div className="mt-2 flex justify-between">
-            <button
-              type="button"
-              onClick={reset}
-              className="text-xs text-slate-400 hover:text-slate-600"
-            >
-              やり直す
-            </button>
+          <div className="flex flex-col gap-2 sm:flex-row-reverse sm:justify-between">
             <button
               type="button"
               onClick={reply}
               disabled={busy || !answer.trim()}
-              className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50"
+              className="ta-btn ta-btn-primary"
             >
               {busy ? "考え中…" : "答える"}
+            </button>
+            <button type="button" onClick={reset} className="ta-btn ta-btn-quiet">
+              やり直す
             </button>
           </div>
         </section>
       )}
 
       {phase.kind === "done" && (
-        <section className="space-y-3">
-          <div className="text-sm text-emerald-700 dark:text-emerald-400">
-            メモにしました。今日の 21 時に GitHub へ自動コミットされます。
-          </div>
+        <section className="space-y-4">
+          <p className="rounded-xl bg-good-soft p-3" style={{ color: "var(--ta-good)" }}>
+            メモにしました。設定した時刻に GitHub へ自動でコミットされます。
+          </p>
           <MemoCard memo={phase.memo} />
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={reset}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm dark:border-slate-700"
-            >
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button type="button" onClick={reset} className="ta-btn ta-btn-primary flex-1">
               もう 1 件投げる
             </button>
-            <button
-              type="button"
-              onClick={props.onSaved}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white dark:bg-white dark:text-slate-900"
-            >
+            <button type="button" onClick={props.onSaved} className="ta-btn flex-1">
               今日のメモを見る
             </button>
           </div>
@@ -206,9 +198,9 @@ export function CapturePage(props: { onSaved: () => void }) {
       )}
 
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+        <p role="alert" className="rounded-xl bg-warn-soft p-3" style={{ color: "var(--ta-warn)" }}>
           {error}
-        </div>
+        </p>
       )}
     </div>
   );

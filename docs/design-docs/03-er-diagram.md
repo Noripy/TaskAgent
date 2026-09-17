@@ -92,9 +92,18 @@ erDiagram
   "next_actions": [{ "text": "目次案を 3 案書く", "minutes": 15, "due": "2026-09-19" }], // 15 分以内
   "people": ["田中さん"],
   "tags": ["資料"],
-  "horenso": { "kind": "報告", "to": "田中さん", "draft": "構成を修正しました。..." }
+  "horenso": { "kind": "報告", "to": "田中さん", "draft": "構成を修正しました。..." },
+  "communication": {                                           // 語彙力・伝え方
+    "said": "あの、順番がちょっと…",
+    "better": "構成を見直します。理由は流れが分かりにくいためです。目次案を明日お見せします。",
+    "vocabulary": [{ "word": "所感", "usage": "報告の末尾で自分の見立てを添えるとき" }],
+    "delivery_tip": "結論を最初の 1 文で言い切る"
+  }
 }
 ```
+
+`daily_digests.insight_json` にも `communication: { focus, phrase }` が入る（伝え方の改善点 1 つと、明日使うフレーズ 1 つ）。
+旧データには `communication` が無いが、zod の既定値で補うのでマイグレーション不要。
 
 JSON カラムにした理由: メモ構造はプロンプト改善で頻繁に変わる。列に正規化すると毎回マイグレーションが必要になる。検索は `local_date` と `title` の列で足りる。
 
