@@ -1,0 +1,17 @@
+# コピーして backend.hcl にする（git 管理外）。state を Cloudflare R2 に置くための S3 互換設定。
+# 事前に R2 バケット（例: taskagent-tfstate）と R2 API トークンを作り、
+#   export AWS_ACCESS_KEY_ID=<R2 Access Key ID>
+#   export AWS_SECRET_ACCESS_KEY=<R2 Secret Access Key>
+# を設定してから `terraform init -backend-config=backend.hcl`。
+bucket = "taskagent-tfstate"
+key    = "production/terraform.tfstate"
+region = "auto"
+endpoints = {
+  s3 = "https://<ACCOUNT_ID>.r2.cloudflarestorage.com"
+}
+skip_credentials_validation = true
+skip_region_validation      = true
+skip_requesting_account_id  = true
+skip_metadata_api_check     = true
+skip_s3_checksum            = true
+use_path_style              = true

@@ -20,10 +20,12 @@
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test:workers": "vitest run --config vitest.workers.config.ts",
     "test:watch": "vitest --config vitest.unit.config.ts",
-    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "verify": "pnpm lint && pnpm check:docs && pnpm typecheck && pnpm test && pnpm build",
     "db:migrate:local": "wrangler d1 migrations apply taskagent-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply taskagent-db --remote",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "check:docs": "node scripts/check-claude-md.mjs",
+    "infra:sync": "node scripts/sync-wrangler-from-terraform.mjs"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.5",

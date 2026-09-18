@@ -26,15 +26,21 @@ pnpm dev                # Vite + Worker 統合開発サーバー http://localhos
 
 ## 2. 本番（Cloudflare）
 
-一度だけ:
+本番は **Terraform（D1・AI Gateway）+ wrangler（Worker）** で構築する。チェックリスト付きの手順書は `docs/ops/cloudflare-setup.md`。以下は最短の要約:
 
 ```bash
-pnpm exec wrangler login
-pnpm exec wrangler d1 create taskagent-db
-# 出力された database_id を ./wrangler.jsonc の d1_databases[0].database_id に貼る
+# 1) 状態を持つリソースを Terraform で作る（state は R2）
+cd infra/terraform
+cp backend.hcl.example backend.hcl && cp terraform.tfvars.example terraform.tfvars   # 値を埋める
+terraform init -backend-config=backend.hcl && terraform apply
+cd ../..
+
+# 2) D1 の database_id を wrangler.jsonc に反映してコミット
+pnpm infra:sync
 pnpm db:migrate:remote
 
-# アプリの Secrets（.dev.vars と同じキー）
+# 3) アプリの Secrets（.dev.vars と同じキー）
+pnpm exec wrangler login
 for k in GITHUB_CLIENT_ID GITHUB_CLIENT_SECRET GEMINI_API_KEY TOKEN_ENCRYPTION_KEY SESSION_SECRET; do
   pnpm exec wrangler secret put $k
 done

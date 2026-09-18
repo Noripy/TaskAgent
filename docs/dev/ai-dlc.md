@@ -53,6 +53,8 @@ flowchart LR
 | サブエージェント | `.claude/agents/` | `reviewer`（読み取り専用）と `test-writer`（テストのみ書く） |
 | 型で守る | Hono RPC + zod | API のズレ・LLM 出力の崩れをビルド/実行時に検出 |
 | CI | `.github/workflows/ci.yml` | 速い順に並列（lint/型 → 単体 → 結合 → ビルド + バンドルサイズ検査） |
+| 学びの台帳 | `.claude/MEMORY.md` + `/learn` | ハマりを hooks / rules / settings / CLAUDE.md / notes へ昇格。未反映なら Stop フックが差し戻す |
+| ドキュメントのズレ検知 | `scripts/check-claude-md.mjs`（`pnpm check:docs`） | CLAUDE.md / rules のパスとコマンドが実在するかを CI と Stop フックで検査 |
 
 ## 4. Loop Engineering（ループを短く保つ）
 
@@ -72,7 +74,7 @@ Boris Cherny（Claude Code 開発者）が公開しているワークフロー�
 | 大きな変更は plan mode から | `docs/dev/ai-dlc.md` 1 章。PR テンプレにも「なぜ」を要求 |
 | AI に「検証手段」を与える | `pnpm verify`、結合テスト、`/api/health` |
 | サブエージェントで検証・探索を分離 | `reviewer` / `test-writer` |
-| worktree で並行セッション | `scripts/worktree.sh` |
+| worktree で並行セッション | `scripts/worktree.sh`（`docs/notes/parallel-development.md`） |
 | よく使う手順はスラッシュコマンド化 | `.claude/skills/tdd` ほか |
 | フックで整形・ガード | `.claude/hooks/` |
 | 権限を allowlist にして確認疲れを減らす | `.claude/settings.json` |

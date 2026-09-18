@@ -64,7 +64,9 @@ pnpm test:workers    # workerd + D1 の結合テスト
 ```
 
 - 開発の進め方（TDD / AI-DLC / Claude Code の使い方）: [docs/dev/ai-dlc.md](docs/dev/ai-dlc.md)
-- 並行開発（worktree / 境界 / CI）: [docs/dev/parallel-development.md](docs/dev/parallel-development.md)
+- 本番環境の構築手順書（Terraform + wrangler）: [docs/ops/cloudflare-setup.md](docs/ops/cloudflare-setup.md)
+- 備考（ノウハウ集: 並行開発 / Terraform / Mermaid / 無料枠の落とし穴 / 学びの運用）: [docs/notes/](docs/notes/README.md)
+- 学びの台帳: [.claude/MEMORY.md](.claude/MEMORY.md)（ハマったら 1 行書いて `/learn` で昇格）
 - AI エージェント向けの指示: [CLAUDE.md](CLAUDE.md)（パス別ルールは `.claude/rules/`）
 
 ## リポジトリ構成
@@ -80,10 +82,13 @@ test/core            src/core の単体テスト
 test/unit            fetch モックの単体テスト（Gemini / GitHub / 暗号）
 test/workers         workerd 上の結合テスト（D1 実物）
 docs/design-docs     構成図・業務フロー・ER・技術選定・UI 設計・ADR
-docs/dev             開発フロー（AI-DLC / TDD）・並行開発・セットアップ
+docs/dev             開発フロー（AI-DLC / TDD）・ローカルセットアップ
+docs/ops             環境構築手順書（Cloudflare / Terraform）
+docs/notes           備考: ノウハウ集（並行開発・Terraform・Mermaid・無料枠・学びの運用）
 docs/product         ペルソナ・用語集
-.claude              Claude Code 用の設定・ルール・スキル・サブエージェント・フック
-.github/workflows    CI（verify）と Deploy（main → wrangler deploy）
+infra/terraform      D1・AI Gateway の IaC（state は R2）。Worker 本体は wrangler
+.claude              Claude Code 用の設定・ルール・スキル・サブエージェント・フック・学びの台帳（MEMORY.md）
+.github/workflows    CI（verify）/ Deploy（main → wrangler deploy）/ Infra（terraform plan、apply は手動）
 wrangler.jsonc       Cloudflare の設定（D1 バインディング・Cron）
 ```
 
