@@ -1,0 +1,213 @@
+@import "tailwindcss";
+
+/*
+  疲れていても読める UI のためのデザイントークン。
+  - 文字は 17px 基準、行間 1.75。「おつかれモード」で 20px / 1.9。
+  - 純白×純黒を避け、コントラスト比 7:1 以上の組み合わせに固定。
+  - 色の意味を固定: accent = 操作、good = 良かったこと、warn = 注意、danger = 取り消し。
+  - 動きは最小。prefers-reduced-motion では完全に止める。
+*/
+:root {
+  color-scheme: light dark;
+  --ta-bg: #f3f4f6;
+  --ta-surface: #ffffff;
+  --ta-text: #1f2937;
+  --ta-muted: #4b5563;
+  --ta-border: #d6dae0;
+  --ta-accent: #0e7490;
+  --ta-accent-text: #ffffff;
+  --ta-accent-soft: #e0f2fe;
+  --ta-good: #047857;
+  --ta-good-soft: #ecfdf5;
+  --ta-warn: #92400e;
+  --ta-warn-soft: #fffbeb;
+  --ta-danger: #b91c1c;
+  --ta-size: 17px;
+  --ta-leading: 1.75;
+  --ta-radius: 14px;
+  --ta-tap: 48px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ta-bg: #0f172a;
+    --ta-surface: #1e293b;
+    --ta-text: #e5e7eb;
+    --ta-muted: #cbd5e1;
+    --ta-border: #334155;
+    --ta-accent: #67e8f9;
+    --ta-accent-text: #0f172a;
+    --ta-accent-soft: #164e63;
+    --ta-good: #6ee7b7;
+    --ta-good-soft: #064e3b;
+    --ta-warn: #fcd34d;
+    --ta-warn-soft: #451a03;
+    --ta-danger: #fca5a5;
+  }
+}
+
+/* おつかれモード: 文字を大きく、行間を広く、二次情報を隠す */
+:root[data-mode="calm"] {
+  --ta-size: 20px;
+  --ta-leading: 1.9;
+  --ta-tap: 56px;
+}
+:root[data-mode="calm"] .ta-secondary {
+  display: none;
+}
+
+@theme inline {
+  --color-bg: var(--ta-bg);
+  --color-surface: var(--ta-surface);
+  --color-ink: var(--ta-text);
+  --color-muted: var(--ta-muted);
+  --color-line: var(--ta-border);
+  --color-accent: var(--ta-accent);
+  --color-accent-text: var(--ta-accent-text);
+  --color-accent-soft: var(--ta-accent-soft);
+  --color-good: var(--ta-good);
+  --color-good-soft: var(--ta-good-soft);
+  --color-warn: var(--ta-warn);
+  --color-warn-soft: var(--ta-warn-soft);
+  --color-danger: var(--ta-danger);
+  --radius-card: var(--ta-radius);
+}
+
+html {
+  font-size: var(--ta-size);
+}
+
+body {
+  background: var(--ta-bg);
+  color: var(--ta-text);
+  line-height: var(--ta-leading);
+  font-family:
+    system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* 共通部品。@apply は使わず素の CSS で書く（Biome と相性が良い） */
+.ta-card {
+  background: var(--ta-surface);
+  border: 1px solid var(--ta-border);
+  border-radius: var(--ta-radius);
+  padding: 1.1rem 1.15rem;
+}
+.ta-btn {
+  min-height: var(--ta-tap);
+  padding: 0.55rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid var(--ta-border);
+  background: var(--ta-surface);
+  color: var(--ta-text);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+.ta-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ta-btn-primary {
+  background: var(--ta-accent);
+  color: var(--ta-accent-text);
+  border-color: transparent;
+}
+.ta-btn-quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ta-muted);
+  font-weight: 500;
+}
+.ta-btn:focus-visible,
+.ta-input:focus-visible,
+.ta-link:focus-visible {
+  outline: 3px solid var(--ta-accent);
+  outline-offset: 2px;
+}
+.ta-input {
+  width: 100%;
+  min-height: var(--ta-tap);
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--ta-border);
+  background: var(--ta-surface);
+  color: var(--ta-text);
+  font-size: 1rem;
+  line-height: var(--ta-leading);
+}
+.ta-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ta-muted);
+  letter-spacing: 0.02em;
+  margin-bottom: 0.25rem;
+}
+.ta-h1 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.ta-h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.ta-muted {
+  color: var(--ta-muted);
+}
+.ta-quote {
+  border-left: 4px solid var(--ta-accent);
+  padding: 0.5rem 0.9rem;
+  background: var(--ta-accent-soft);
+  border-radius: 0 12px 12px 0;
+  white-space: pre-wrap;
+}
+.ta-chip {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--ta-bg);
+  border: 1px solid var(--ta-border);
+  font-size: 0.85rem;
+}
+.ta-check {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  border: 2px solid var(--ta-border);
+  border-radius: 6px;
+  flex: none;
+  margin-top: 0.3em;
+}
+details.ta-details > summary {
+  cursor: pointer;
+  color: var(--ta-muted);
+  font-weight: 600;
+  list-style: none;
+  min-height: var(--ta-tap);
+  display: flex;
+  align-items: center;
+}
+details.ta-details > summary::before {
+  content: "▸ ";
+}
+details.ta-details[open] > summary::before {
+  content: "▾ ";
+}

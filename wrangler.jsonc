@@ -1,0 +1,38 @@
+{
+  // Cloudflare Workers 設定。全て無料枠内で動く構成。
+  // 参照: docs/design-docs/04-tech-selection.md
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "taskagent",
+  "main": "src/server/index.ts",
+  "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+
+  // SPA は Workers Static Assets から配信（無料・リクエスト無制限）
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // D1（無料: 5GB / 5M reads/day / 100k writes/day）
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "taskagent-db",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // 毎時実行。ユーザーごとの digest_hour（現地時刻）に一致したときだけ日次コミットする。
+  "triggers": { "crons": ["0 * * * *"] },
+
+  // 非秘密の設定。秘密は `wrangler secret put` / .dev.vars で。
+  "vars": {
+    "APP_ENV": "production",
+    "GEMINI_MODEL": "gemini-2.5-flash",
+    "GITHUB_OAUTH_SCOPE": "repo",
+    "DEFAULT_TIMEZONE": "Asia/Tokyo",
+    "DEFAULT_DIGEST_HOUR": "21"
+  }
+}

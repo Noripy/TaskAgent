@@ -1,0 +1,11 @@
+# ローカル開発用。コピーして .dev.vars にする（git 管理外）。本番は `wrangler secret put <NAME>`。
+GITHUB_CLIENT_ID=Iv1.xxxxxxxx
+GITHUB_CLIENT_SECRET=xxxxxxxx
+GEMINI_API_KEY=AIzaSy...
+# 32 バイトを base64 にしたもの: openssl rand -base64 32
+TOKEN_ENCRYPTION_KEY=
+# 任意の長いランダム文字列: openssl rand -hex 32
+SESSION_SECRET=
+# 任意: Cloudflare AI Gateway を通す場合（無料。キャッシュ・ログ・レート制限）
+# GEMINI_BASE_URL=https://gateway.ai.cloudflare.com/v1/<ACCOUNT_ID>/<GATEWAY>/google-ai-studio
+APP_ENV=development
