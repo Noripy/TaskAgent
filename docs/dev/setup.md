@@ -5,7 +5,7 @@
 ```bash
 corepack enable && corepack prepare pnpm@10.33.0 --activate
 pnpm install
-cp apps/web/.dev.vars.example apps/web/.dev.vars
+cp .dev.vars.example .dev.vars
 ```
 
 `.dev.vars` を埋める:
@@ -29,14 +29,14 @@ pnpm dev                # Vite + Worker 統合開発サーバー http://localhos
 一度だけ:
 
 ```bash
-pnpm --filter @taskagent/web exec wrangler login
-pnpm --filter @taskagent/web exec wrangler d1 create taskagent-db
-# 出力された database_id を apps/web/wrangler.jsonc の d1_databases[0].database_id に貼る
+pnpm exec wrangler login
+pnpm exec wrangler d1 create taskagent-db
+# 出力された database_id を ./wrangler.jsonc の d1_databases[0].database_id に貼る
 pnpm db:migrate:remote
 
 # アプリの Secrets（.dev.vars と同じキー）
 for k in GITHUB_CLIENT_ID GITHUB_CLIENT_SECRET GEMINI_API_KEY TOKEN_ENCRYPTION_KEY SESSION_SECRET; do
-  pnpm --filter @taskagent/web exec wrangler secret put $k
+  pnpm exec wrangler secret put $k
 done
 ```
 
@@ -65,7 +65,7 @@ GEMINI_BASE_URL=https://gateway.ai.cloudflare.com/v1/<ACCOUNT_ID>/<GATEWAY>/goog
 
 ```bash
 curl -s http://localhost:5173/api/health           # {"ok":true,"env":"development"}
-pnpm --filter @taskagent/web exec wrangler d1 execute taskagent-db --local --command "select count(*) from memos"
+pnpm exec wrangler d1 execute taskagent-db --local --command "select count(*) from memos"
 ```
 
-Cron をローカルで叩く: `pnpm --filter @taskagent/web exec wrangler dev --test-scheduled` を起動し、`curl "http://localhost:8787/__scheduled?cron=0+*+*+*+*"`。
+Cron をローカルで叩く: `pnpm exec wrangler dev --test-scheduled` を起動し、`curl "http://localhost:8787/__scheduled?cron=0+*+*+*+*"`。

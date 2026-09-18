@@ -14,7 +14,7 @@ case "$cmd" in
     git -C "$ROOT" fetch origin main >/dev/null 2>&1 || true
     git -C "$ROOT" worktree add -b "$name" "$WT_DIR/$name" origin/main 2>/dev/null || git -C "$ROOT" worktree add "$WT_DIR/$name" "$name"
     (cd "$WT_DIR/$name" && pnpm install --frozen-lockfile)
-    [ -f "$ROOT/apps/web/.dev.vars" ] && cp "$ROOT/apps/web/.dev.vars" "$WT_DIR/$name/apps/web/.dev.vars"
+    [ -f "$ROOT/.dev.vars" ] && cp "$ROOT/.dev.vars" "$WT_DIR/$name/.dev.vars"
     echo "ready: cd $WT_DIR/$name && claude"
     ;;
   rm)

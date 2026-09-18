@@ -30,11 +30,11 @@ flowchart LR
 
 ## 2. TDD の実際
 
-- **内側ループ（秒）**: `pnpm test:unit` … `packages/core` と `apps/web/test/unit`。fetch モック、D1 なし。
-- **外側ループ（数秒）**: `pnpm --filter @taskagent/web test:workers` … workerd + D1 実物。
+- **内側ループ（秒）**: `pnpm test:unit` … `test/core` と `test/unit`。fetch モック、D1 なし。
+- **外側ループ（数秒）**: `pnpm test:workers` … `test/workers`。workerd + D1 実物。
 - **ゲート（分）**: `pnpm verify` … CI と同じ。PR 前に必ず。
 
-テストの置き場所は「依存の少ない層」を優先する。ロジックが Cloudflare に依存していないなら `packages/core` に移してから書く。
+テストの置き場所は「依存の少ない層」を優先する。ロジックが Cloudflare に依存していないなら `src/core` に移してから書く。
 
 `/tdd <一言>` スキルがこの手順を強制する。
 
@@ -89,7 +89,7 @@ Claude Code はシステムプロンプト + CLAUDE.md + ルールを毎ター�
 - **大きなファイルを丸ごと読ませない**: `worker-configuration.d.ts`（生成物）や `pnpm-lock.yaml` は Biome の対象外にし、AI にも読ませない（設定の `deny` 参照）。
 - **探索はサブエージェントに**: 検索・読み込みの大量の出力を親コンテキストに入れない。
 - **同じ質問を繰り返さない**: 決めたことは ADR に書く。AI も人も ADR を読めば済む。
-- **LLM 側（Gemini）も同じ**: プロンプトは安定部分（system）を先頭、可変（入力・履歴）を末尾に。`packages/core/src/prompts.ts` 参照。
+- **LLM 側（Gemini）も同じ**: プロンプトは安定部分（system）を先頭、可変（入力・履歴）を末尾に。`src/core/prompts.ts` 参照。
 
 ## 7. 人が守ること（メンターからの注意）
 

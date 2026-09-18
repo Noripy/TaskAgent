@@ -12,7 +12,7 @@
 | おつかれモード | 文字を大きく、行間を広げ、二次情報を隠す表示モード | `html[data-mode=calm]`, `.ta-secondary` |
 | ダイジェスト (digest) | 1 日分のメモと振り返りをまとめた Markdown | `daily_digests`, `renderDailyDigest` |
 | インサイト (insight) | 日次の「良かったこと 3 / 明日の一歩 3 / ひとこと」 | `InsightSchema` |
-| Deps | fetch / 時刻 / ID 生成を差し替えるための依存の束 | `apps/web/src/server/env.ts` |
+| Deps | fetch / 時刻 / ID 生成を差し替えるための依存の束 | `src/server/env.ts` |
 | AI-DLC | AI-Driven Development Life Cycle。AI エージェントが実装の主役になる前提の開発サイクル | `docs/dev/ai-dlc.md` |
 | Harness Engineering | エージェントが安全に速く動けるよう、検証コマンド・権限・フックなど「足場」を整える工学 | `.claude/`, `pnpm verify` |
 | Loop Engineering | 「変更 → 検証 → 修正」のループを短く・自動で回るように設計すること | `pnpm test:unit`, CI |

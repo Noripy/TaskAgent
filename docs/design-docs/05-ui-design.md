@@ -60,7 +60,7 @@ flowchart TB
 
 ## 語彙力・伝え方の観点（データ）
 
-`MemoSchema.communication`（`packages/core/src/memo.ts`）:
+`MemoSchema.communication`（`src/core/memo.ts`）:
 
 | フィールド | 意味 | 上限 |
 |---|---|---|

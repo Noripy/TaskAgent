@@ -6,15 +6,15 @@
 
 ```mermaid
 flowchart LR
-  core["packages/core<br/>スキーマ・プロンプト・描画"] --> server["apps/web/src/server<br/>ルート・DB・ジョブ"]
-  core --> client["apps/web/src/client<br/>画面"]
+  core["src/core<br/>スキーマ・プロンプト・描画"] --> server["src/server<br/>ルート・DB・ジョブ"]
+  core --> client["src/client<br/>画面"]
   server -. "型のみ (AppType)" .-> client
   docs["docs/design-docs"]
 ```
 
 | 領域 | 契約（境界を越えるもの） | 同時作業の可否 |
 |---|---|---|
-| `packages/core` | export される関数と zod スキーマ | スキーマ変更は先に core だけの PR にする |
+| `src/core` | `src/core/index.ts` から export される関数と zod スキーマ。`tsconfig.core.json` で Workers/DOM 型が見えない | スキーマ変更は先に core だけの PR にする |
 | `server` | `AppType`（Hono RPC）と D1 スキーマ | ルート追加同士は衝突しない。`app.ts` の `.route()` 1 行だけ競合しうる |
 | `client` | `api.ts` 経由の型 | 画面ごとに独立 |
 | `migrations` | 連番ファイル | **番号が衝突する**。PR 作成時に付番し直す |
@@ -48,7 +48,7 @@ worktree ごとに `node_modules` と `.wrangler`（ローカル D1）が分か�
 
 | 場所 | 対策 |
 |---|---|
-| `apps/web/src/server/app.ts` の `.route()` | 新ルートは末尾に追加。1 行の競合は rebase で解決 |
-| `packages/core/src/index.ts` の re-export | ファイル単位で `export *`。新ファイル追加時のみ触る |
+| `src/server/app.ts` の `.route()` | 新ルートは末尾に追加。1 行の競合は rebase で解決 |
+| `src/core/index.ts` の re-export | ファイル単位で `export *`。新ファイル追加時のみ触る |
 | `docs/design-docs/03-er-diagram.md` | テーブル追加は末尾に。`/design-sync` で自動更新 |
 | `pnpm-lock.yaml` | 依存追加は専用 PR に分ける |

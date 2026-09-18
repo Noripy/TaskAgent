@@ -76,8 +76,8 @@ B を採用した理由: A は「対話ラリー」の UI が SSR だと書き�
 
 | 候補 | メリット | デメリット | 判定 |
 |---|---|---|---|
-| **pnpm workspace（`packages/core` + `apps/web`）** | 純粋ロジックを Cloudflare から切り離してテストしやすい。並行開発で担当境界が明確 | パッケージが 2 つ増える | **採用** |
-| 単一パッケージ | 最も簡単 | core と infra が混ざり、AI エージェントの変更範囲が広がる | 不採用 |
+| **単一パッケージ + フォルダ境界（`src/core` / `src/server` / `src/client`）** | ルートで `pnpm dev` / `pnpm verify` が動き、新しく参加する人が迷わない。`tsconfig.core.json`（`types: []`）で core の純粋性を型レベルで保証できる | 依存を「パッケージ」で分離できない（フォルダと tsconfig で代替） | **採用**（[ADR-0005](adr/0005-flatten-to-single-package.md)） |
+| pnpm workspace（`packages/core` + `apps/web`） | 依存の分離が強い。パッケージ単位の並行開発 | `--filter` や `workspace:*` の作法が増え、この規模では手数が価値を上回る | 不採用（v0.1 で採用 → v0.2 で平坦化） |
 | Turborepo / Nx | キャッシュ | この規模では過剰 | 不採用（後から足せる） |
 
 ## 8. 無料枠チェックリスト（デプロイ前に確認）

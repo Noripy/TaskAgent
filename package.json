@@ -1,26 +1,52 @@
 {
-  "name": "taskagent-monorepo",
+  "name": "taskagent",
+  "version": "0.2.0",
   "private": true,
+  "type": "module",
+  "description": "新社会人の報連相を支えるメモ化サービス。Cloudflare Workers (Hono) + React SPA + D1 + Gemini + GitHub 日次コミット。",
   "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "dev": "pnpm --filter @taskagent/web dev",
-    "build": "pnpm -r build",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "vite build && wrangler deploy",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
-    "test:unit": "pnpm -r test:unit",
+    "typecheck": "tsc -p tsconfig.core.json && tsc -p tsconfig.json && tsc -p tsconfig.client.json && tsc -p tsconfig.node.json",
+    "test": "pnpm test:unit && pnpm test:workers",
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "test:workers": "vitest run --config vitest.workers.config.ts",
+    "test:watch": "vitest --config vitest.unit.config.ts",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "deploy": "pnpm --filter @taskagent/web deploy",
-    "db:migrate:local": "pnpm --filter @taskagent/web db:migrate:local",
-    "db:migrate:remote": "pnpm --filter @taskagent/web db:migrate:remote"
+    "db:migrate:local": "wrangler d1 migrations apply taskagent-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply taskagent-db --remote",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.5",
+    "hono": "^4.13.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
-    "typescript": "5.9.3"
+    "@cloudflare/vite-plugin": "^1.54.11",
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20260917.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.1.4",
+    "tailwindcss": "^4.3.3",
+    "typescript": "5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.133.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

@@ -8,8 +8,8 @@ description: コードと docs/design-docs（構成図・業務フロー・ER �
 2. 次の対応表で、変更に該当する図を特定する:
    | 変更箇所 | 更新する図 |
    |---|---|
-   | `apps/web/migrations/*.sql` | `docs/design-docs/03-er-diagram.md` |
-   | `apps/web/src/server/routes/*`, `jobs/*` | `docs/design-docs/02-business-flow.md` |
+   | `migrations/*.sql` | `docs/design-docs/03-er-diagram.md` |
+   | `src/server/routes/*`, `jobs/*` | `docs/design-docs/02-business-flow.md` |
    | `wrangler.jsonc`, 新しいバインディング/外部サービス | `docs/design-docs/01-architecture.md` |
    | 依存ライブラリの追加・置換 | `docs/design-docs/04-tech-selection.md` + ADR |
 3. 図（Mermaid）を最小限で更新する。文章の言い換えはしない。

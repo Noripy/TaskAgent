@@ -1,6 +1,6 @@
 # 03. ER 図
 
-D1（SQLite）。DDL は `apps/web/migrations/0001_init.sql`。ID はすべて UUID（TEXT）。時刻は ISO 8601 UTC 文字列、日付はユーザー現地の `YYYY-MM-DD`。
+D1（SQLite）。DDL は `migrations/0001_init.sql`。ID はすべて UUID（TEXT）。時刻は ISO 8601 UTC 文字列、日付はユーザー現地の `YYYY-MM-DD`。
 
 ```mermaid
 erDiagram
@@ -59,7 +59,7 @@ erDiagram
     TEXT capture_id FK "UNIQUE, nullable"
     TEXT local_date
     TEXT title
-    TEXT memo_json "MemoSchema (packages/core) の JSON"
+    TEXT memo_json "MemoSchema (src/core) の JSON"
     TEXT created_at
     TEXT updated_at
   }
@@ -80,7 +80,7 @@ erDiagram
   }
 ```
 
-## `memo_json` の構造（`packages/core/src/memo.ts`）
+## `memo_json` の構造（`src/core/memo.ts`）
 
 ```jsonc
 {

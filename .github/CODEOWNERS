@@ -1,4 +1,4 @@
 # 並行開発の境界。担当が決まったら行を追加する。
-# packages/core/        @owner-core
-# apps/web/src/server/  @owner-server
-# apps/web/src/client/  @owner-client
+# src/core/    @owner-core
+# src/server/  @owner-server
+# src/client/  @owner-client

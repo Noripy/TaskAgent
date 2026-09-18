@@ -55,7 +55,7 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @taskagent/web test:workers
+      - run: pnpm test:workers
 
   build:
     name: build (worker + spa)
@@ -73,4 +73,4 @@ jobs:
       - run: pnpm build
       - name: Worker bundle size (free tier limit is 3MB gzipped)
         run: |
-          gzip -c apps/web/dist/taskagent/index.js | wc -c | awk '{ printf "gzipped worker: %d bytes\n", $1; if ($1 > 3000000) { print "::error::worker bundle exceeds 3MB"; exit 1 } }'
+          gzip -c dist/taskagent/index.js | wc -c | awk '{ printf "gzipped worker: %d bytes\n", $1; if ($1 > 3000000) { print "::error::worker bundle exceeds 3MB"; exit 1 } }'

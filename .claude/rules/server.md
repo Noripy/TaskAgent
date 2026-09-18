@@ -1,9 +1,9 @@
 ---
 paths:
-  - "apps/web/src/server/**"
-  - "apps/web/migrations/**"
+  - "src/server/**"
+  - "migrations/**"
 ---
-# apps/web/src/server のルール
+# src/server のルール
 - ルートは `new Hono<AppEnv>().get(...).post(...)` のメソッドチェーンで定義する（Hono RPC の型推論に必要）。`c.json(body, status)` は status を必ず明示。
 - ルートは薄く。ビジネスロジックは `services/`・`jobs/`、SQL は `db/repo.ts` に閉じ込める。
 - 外部 API は `c.get("deps").fetch` を使う。`globalThis.fetch` 直呼び禁止。

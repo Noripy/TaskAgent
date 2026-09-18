@@ -39,9 +39,9 @@ Browser (React SPA) ──▶ Cloudflare Workers (Hono API) ──▶ D1 (SQLite
 
 ```bash
 pnpm install
-cp apps/web/.dev.vars.example apps/web/.dev.vars   # 値を埋める（下記）
+cp .dev.vars.example .dev.vars   # 値を埋める（下記）
 pnpm db:migrate:local
-pnpm dev                                            # http://localhost:5173
+pnpm dev                          # http://localhost:5173
 ```
 
 `.dev.vars` に必要なもの:
@@ -59,8 +59,8 @@ pnpm dev                                            # http://localhost:5173
 
 ```bash
 pnpm verify          # lint + typecheck + test + build（PR 前に必ず）
-pnpm test:unit       # 高速な単体テスト
-pnpm --filter @taskagent/web test:workers   # workerd + D1 の結合テスト
+pnpm test:unit       # 高速な単体テスト（src/core + fetch モック）
+pnpm test:workers    # workerd + D1 の結合テスト
 ```
 
 - 開発の進め方（TDD / AI-DLC / Claude Code の使い方）: [docs/dev/ai-dlc.md](docs/dev/ai-dlc.md)
@@ -69,20 +69,25 @@ pnpm --filter @taskagent/web test:workers   # workerd + D1 の結合テスト
 
 ## リポジトリ構成
 
+アプリはリポジトリ直下に置き、フォルダで層を分けています（旧 `task-agent/` サブディレクトリは廃止）。
+
 ```
-packages/core        純粋ロジック（zod スキーマ・プロンプト・Markdown 描画）。テストが最も厚い層
-apps/web             Cloudflare Worker（Hono API + React SPA + Cron）
-  src/server         ルート / D1 リポジトリ / Gemini・GitHub クライアント / ジョブ
-  src/client         React SPA（投げる / 今日 / 設定）
-  migrations         D1 マイグレーション
-  test/unit          fetch モックの単体テスト
-  test/workers       workerd 上の結合テスト（D1 実物）
-docs/design-docs     構成図・業務フロー・ER・技術選定・ADR
-docs/dev             開発フロー・並行開発・セットアップ
+src/core             純粋ロジック（zod スキーマ・プロンプト・Markdown 描画・日付）。Cloudflare / React に依存しない
+src/server           Cloudflare Worker: Hono ルート / D1 リポジトリ / Gemini・GitHub クライアント / Cron ジョブ
+src/client           React SPA（投げる / 今日 / 設定）。API は Hono RPC で型付き
+migrations           D1 マイグレーション（追記のみ）
+test/core            src/core の単体テスト
+test/unit            fetch モックの単体テスト（Gemini / GitHub / 暗号）
+test/workers         workerd 上の結合テスト（D1 実物）
+docs/design-docs     構成図・業務フロー・ER・技術選定・UI 設計・ADR
+docs/dev             開発フロー（AI-DLC / TDD）・並行開発・セットアップ
 docs/product         ペルソナ・用語集
-.claude              Claude Code 用の設定・ルール・スキル・サブエージェント
+.claude              Claude Code 用の設定・ルール・スキル・サブエージェント・フック
 .github/workflows    CI（verify）と Deploy（main → wrangler deploy）
+wrangler.jsonc       Cloudflare の設定（D1 バインディング・Cron）
 ```
+
+`src/core` は `tsconfig.core.json`（Workers / DOM の型を読み込まない設定）で型チェックされるため、Cloudflare 依存が混ざるとコンパイルで落ちます。
 
 ## 注意（社外秘の扱い）
 

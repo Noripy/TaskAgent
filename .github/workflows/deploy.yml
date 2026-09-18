@@ -30,12 +30,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify
       - name: Apply D1 migrations
-        run: pnpm --filter @taskagent/web exec wrangler d1 migrations apply taskagent-db --remote
+        run: pnpm exec wrangler d1 migrations apply taskagent-db --remote
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Deploy worker
-        run: pnpm --filter @taskagent/web exec wrangler deploy
+        run: pnpm exec wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

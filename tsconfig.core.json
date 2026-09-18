@@ -1,0 +1,7 @@
+{
+  // src/core は Cloudflare・DOM・React に依存しない純粋ロジック。
+  // types を空にして Workers/DOM のグローバル型を見えなくすることで、依存の混入をコンパイル時に防ぐ。
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "lib": ["ES2022"], "types": [] },
+  "include": ["src/core", "test/core"]
+}

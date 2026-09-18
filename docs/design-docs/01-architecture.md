@@ -43,9 +43,9 @@ flowchart LR
 
 | レイヤ | 実体 | 場所 | 無料枠の上限（2026-09 時点、公式ページで要再確認） |
 |---|---|---|---|
-| IaaS/エッジ | Cloudflare Workers | `apps/web/src/server` | 100,000 req/日、CPU 10ms/req |
-| 静的配信 | Workers Static Assets | `apps/web/dist/client` | リクエスト無制限 |
-| DB | D1 | `apps/web/migrations` | 5GB、読 5M 行/日、書 100k 行/日 |
+| IaaS/エッジ | Cloudflare Workers | `src/server` | 100,000 req/日、CPU 10ms/req |
+| 静的配信 | Workers Static Assets | `dist/client` | リクエスト無制限 |
+| DB | D1 | `migrations` | 5GB、読 5M 行/日、書 100k 行/日 |
 | ジョブ | Cron Triggers | `wrangler.jsonc` `triggers.crons` | 無料プランで利用可 |
 | LLM ゲートウェイ | AI Gateway（任意） | `GEMINI_BASE_URL` | 無料 |
 | LLM | Gemini API（AI Studio キー） | `lib/gemini.ts` | 無料枠あり（RPM/RPD 制限） |
