@@ -84,19 +84,36 @@ sequenceDiagram
 
 ## 2-4. 状態遷移
 
+自己ループはラベルが他の遷移と重なって読めなくなるため使わず、注記に逃がしている。
+
+### キャプチャ（`captures.status`）
+
 ```mermaid
 stateDiagram-v2
-  [*] --> clarifying: POST /api/captures
-  clarifying --> clarifying: need_clarification (round < 3)
-  clarifying --> finalized: ready or round == 3
-  clarifying --> abandoned: 利用者が破棄（将来）
+  direction LR
+  [*] --> clarifying: 投げる
+  clarifying --> finalized: メモ確定
+  clarifying --> abandoned: 破棄（将来）
   finalized --> [*]
+  abandoned --> [*]
+  note right of clarifying
+    Gemini が質問する間はここに留まる。
+    round は最大 3。3 回目は仮置きで確定する。
+  end note
+```
 
-  state daily_digests {
-    [*] --> pending
-    pending --> committed: GitHub PUT 成功
-    pending --> failed: PUT 失敗
-    failed --> committed: 次の Cron でリトライ成功
-    committed --> committed: メモ追加で再コミット（同一ファイル更新）
-  }
+### 日次ダイジェスト（`daily_digests.status`）
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  [*] --> pending: Cron / 今すぐコミット
+  pending --> committed: PUT 成功
+  pending --> failed: PUT 失敗
+  failed --> pending: 次の Cron で再試行
+  committed --> pending: メモ追加
+  note right of committed
+    メモが増えたら同じファイルを更新する。
+    content_hash が同じなら GitHub に触らない（冪等）。
+  end note
 ```
