@@ -12,5 +12,7 @@ description: コードと docs/design-docs（構成図・業務フロー・ER �
    | `src/server/routes/*`, `jobs/*` | `docs/design-docs/02-business-flow.md` |
    | `wrangler.jsonc`, 新しいバインディング/外部サービス | `docs/design-docs/01-architecture.md` |
    | 依存ライブラリの追加・置換 | `docs/design-docs/04-tech-selection.md` + ADR |
+   | `infra/terraform/*.tf` | `docs/ops/cloudflare-setup.md`, `docs/notes/terraform-iac.md` |
+   | `package.json` の scripts、`src/` 直下のフォルダ | `CLAUDE.md`（`pnpm check:docs` で確認） |
 3. 図（Mermaid）を最小限で更新する。文章の言い換えはしない。
 4. 変更点を 3 行以内で要約して報告する。

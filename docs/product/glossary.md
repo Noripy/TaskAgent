@@ -16,4 +16,7 @@
 | AI-DLC | AI-Driven Development Life Cycle。AI エージェントが実装の主役になる前提の開発サイクル | `docs/dev/ai-dlc.md` |
 | Harness Engineering | エージェントが安全に速く動けるよう、検証コマンド・権限・フックなど「足場」を整える工学 | `.claude/`, `pnpm verify` |
 | Loop Engineering | 「変更 → 検証 → 修正」のループを短く・自動で回るように設計すること | `pnpm test:unit`, CI |
+| 学びの台帳 (MEMORY.md) | 運用中のハマりを記録し、hooks / rules / settings / CLAUDE.md / notes へ昇格するための表 | `.claude/MEMORY.md`, `/learn` |
+| 備考 (notes) | 日常の開発・構築で必要なノウハウ集。1 テーマ 1 ファイル | `docs/notes/` |
+| IaC | Infrastructure as Code。Cloudflare の D1・AI Gateway を Terraform で管理する | `infra/terraform/` |
 | Progressive Disclosure | 必要なときに必要な情報だけ出す。CLAUDE.md を短く保ち、詳細は rules/skills に分ける | `.claude/rules/*.md` |

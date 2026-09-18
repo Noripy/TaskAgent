@@ -21,7 +21,12 @@
       "Bash(ls:*)",
       "Bash(cat:*)",
       "Bash(rg:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(node scripts/check-claude-md.mjs)",
+      "Bash(pnpm check:docs:*)",
+      "Bash(terraform fmt:*)",
+      "Bash(terraform validate:*)",
+      "Bash(terraform plan:*)"
     ],
     "deny": [
       "Read(./.dev.vars)",
@@ -34,7 +39,12 @@
       "Bash(wrangler deploy:*)",
       "Bash(pnpm db:migrate:remote:*)",
       "Bash(git push --force:*)",
-      "Bash(rm -rf:*)"
+      "Bash(rm -rf:*)",
+      "Bash(terraform apply:*)",
+      "Bash(terraform destroy:*)",
+      "Read(./infra/terraform/backend.hcl)",
+      "Read(./infra/terraform/terraform.tfvars)",
+      "Read(./infra/terraform/*.tfstate*)"
     ]
   },
   "hooks": {
@@ -58,6 +68,28 @@
             "type": "command",
             "command": "bash .claude/hooks/guard-migrations.sh",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-start.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop-check.sh",
+            "timeout": 30
           }
         ]
       }

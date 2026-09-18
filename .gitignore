@@ -21,3 +21,14 @@ coverage/
 .DS_Store
 *.log
 .claude/settings.local.json
+
+# claude code (personal)
+CLAUDE.local.md
+
+# terraform
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/backend.hcl
+infra/terraform/terraform.tfvars
+infra/terraform/*.tfplan

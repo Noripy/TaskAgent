@@ -1,0 +1,5 @@
+# コピーして terraform.tfvars にする（git 管理外）
+cloudflare_account_id            = "0123456789abcdef0123456789abcdef"
+environment                      = "production"
+ai_gateway_enabled               = true
+ai_gateway_rate_limit_per_minute = 10

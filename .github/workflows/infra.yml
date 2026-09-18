@@ -1,0 +1,59 @@
+name: Infra (Terraform)
+
+# PR では plan のみ。apply は手動実行（workflow_dispatch）に限定し、誤適用を防ぐ。
+# 必要な Secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
+on:
+  pull_request:
+    paths: ["infra/terraform/**", ".github/workflows/infra.yml"]
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "true にすると apply する"
+        required: true
+        default: "false"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    defaults:
+      run:
+        working-directory: infra/terraform
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.13.3"
+      - run: terraform fmt -check -recursive
+      - name: Init (state on R2)
+        run: |
+          terraform init \
+            -backend-config="bucket=taskagent-tfstate" \
+            -backend-config="key=production/terraform.tfstate" \
+            -backend-config="region=auto" \
+            -backend-config="endpoints={s3=\"https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com\"}" \
+            -backend-config="skip_credentials_validation=true" \
+            -backend-config="skip_region_validation=true" \
+            -backend-config="skip_requesting_account_id=true" \
+            -backend-config="skip_metadata_api_check=true" \
+            -backend-config="skip_s3_checksum=true" \
+            -backend-config="use_path_style=true"
+      - run: terraform validate
+      - run: terraform plan -no-color -out=tfplan
+      - name: Apply (manual only)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.apply == 'true'
+        run: terraform apply -no-color tfplan

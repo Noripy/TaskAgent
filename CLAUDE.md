@@ -13,13 +13,16 @@ Workers（Hono）+ Workers Static Assets（React/Vite SPA）+ D1 + Cron Triggers
 - `migrations` … D1 マイグレーション（追記のみ、既存ファイルは編集しない）。
 - `test/core` `test/unit` `test/workers` … 純粋ロジック / fetch モック / workerd + D1 結合。
 - `docs/design-docs` … 構成図・業務フロー・ER・技術選定。仕様を変えたら同じ PR で更新。
+- `docs/ops` … 環境構築手順書。`infra/terraform` … D1・AI Gateway の IaC（Worker は wrangler）。
+- `docs/notes` … 備考（ノウハウ集）。並行開発・Terraform・Mermaid・無料枠の落とし穴。
 
 ## コマンド（このリポジトリで「検証」といえば `pnpm verify`）
 ```
-pnpm verify        # lint + typecheck + test + build（PR 前に必ず通す）
+pnpm verify        # lint + check:docs + typecheck + test + build（PR 前に必ず通す）
 pnpm test:unit     # 高速な単体テスト（src/core + fetch モック。TDD の内側ループ）
 pnpm test:workers  # workerd + D1 の結合テスト
 pnpm lint:fix      # Biome で整形
+pnpm check:docs    # CLAUDE.md / rules に書いたパスとコマンドが実在するか
 ```
 
 ## 開発ルール（短く・守る）
@@ -30,5 +33,7 @@ pnpm lint:fix      # Biome で整形
 5. 1 PR = 1 関心事。`src/core` と `src/server` / `src/client` を同時に大改修しない。
 6. 迷ったら `docs/product/persona.md` のユーザー（20 代・完璧主義・過集中）にとって「最初の一歩が小さくなるか」で判断。
 7. UI は `docs/design-docs/05-ui-design.md` の原則（大きい文字・固定した読む順番・二次情報は `.ta-secondary`）に従う。
+8. **学びは台帳へ**: ハマったら `.claude/MEMORY.md` に 1 行書き、`/learn` で hooks / rules / settings / CLAUDE.md / `docs/notes` のどれかに同じコミットで昇格する。「未反映」のまま終えると Stop フックが差し戻す。
+9. scripts・フォルダ・ルールを変えたら、この CLAUDE.md も同じ PR で直す（`pnpm check:docs` がズレを検知する）。
 
 詳細ルールはパス別に `.claude/rules/` に分割されている（該当ファイルを触るときだけ読み込まれる）。
