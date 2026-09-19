@@ -5,6 +5,7 @@
 
 | ファイル | 内容 |
 |---|---|
+| [design-principles.md](design-principles.md) | 実装時の設計原則（KISS・PIE・SLAP・OCP）をこのリポジトリの実コードで説明 |
 | [docker-dev.md](docker-dev.md) | Docker 開発の構成と落とし穴（glibc・volume・HMR・秘密の除外） |
 | [parallel-development.md](parallel-development.md) | 並行開発の境界・worktree・衝突しやすい場所 |
 | [terraform-iac.md](terraform-iac.md) | Terraform で Cloudflare を管理するときの考え方と落とし穴 |

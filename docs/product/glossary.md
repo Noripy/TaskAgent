@@ -16,6 +16,10 @@
 | AI-DLC | AI-Driven Development Life Cycle。AI エージェントが実装の主役になる前提の開発サイクル | `docs/dev/ai-dlc.md` |
 | Harness Engineering | エージェントが安全に速く動けるよう、検証コマンド・権限・フックなど「足場」を整える工学 | `.claude/`, `pnpm verify` |
 | Loop Engineering | 「変更 → 検証 → 修正」のループを短く・自動で回るように設計すること | `pnpm test:unit`, CI |
+| KISS | Keep It Simple, Stupid。必要以上の仕組みを入れない | `docs/notes/design-principles.md` |
+| PIE | Program Intently and Expressively。名前と構造で意図を語らせる | 同上 |
+| SLAP | Single Level of Abstraction Principle。1 関数の中で抽象度を揃える | 同上 |
+| OCP | Open-Closed Principle。拡張に開き、修正に閉じる | 同上 |
 | dev イメージ | `Dockerfile` の `dev` / `ci` ステージ。ローカル・CI・デプロイで共有する実行環境 | `Dockerfile`, `compose.yaml` |
 | フェイク LLM | `GEMINI_FAKE=1` のとき使う、ネットワーク不要の決定的な Gemini 代替 | `src/server/lib/gemini-fake.ts` |
 | 学びの台帳 (MEMORY.md) | 運用中のハマりを記録し、hooks / rules / settings / CLAUDE.md / notes へ昇格するための表 | `.claude/MEMORY.md`, `/learn` |
