@@ -1,8 +1,10 @@
 name: Deploy
 
-# main にマージされたら Cloudflare へデプロイ。
+# main にマージされたら Cloudflare へデプロイする。
+# ビルドもデプロイも CI と同じイメージの中で行い、検証した成果物をそのまま届ける。
+#
 # 必要な Secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
-# アプリの Secrets（GEMINI_API_KEY 等）は `wrangler secret put` で一度だけ登録する（docs/dev/setup.md）。
+# アプリの Secrets（GEMINI_API_KEY 等）は `wrangler secret put` で一度だけ登録する（docs/ops/cloudflare-setup.md）。
 on:
   push:
     branches: [main]
@@ -18,24 +20,39 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     environment: production
+    env:
+      IMAGE: taskagent-ci:${{ github.sha }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image (target=ci)
+        uses: docker/build-push-action@v6
         with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm verify
+          context: .
+          target: ci
+          load: true
+          tags: taskagent-ci:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 本番に出す前の最後のゲート。CI と同じコマンド・同じイメージ
+      - name: pnpm verify
+        run: docker run --rm "$IMAGE" pnpm verify
+
       - name: Apply D1 migrations
-        run: pnpm exec wrangler d1 migrations apply taskagent-db --remote
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          docker run --rm \
+            -e CLOUDFLARE_API_TOKEN -e CLOUDFLARE_ACCOUNT_ID \
+            "$IMAGE" pnpm db:migrate:remote
+
       - name: Deploy worker
-        run: pnpm exec wrangler deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          docker run --rm \
+            -e CLOUDFLARE_API_TOKEN -e CLOUDFLARE_ACCOUNT_ID \
+            "$IMAGE" pnpm cf:deploy

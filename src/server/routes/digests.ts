@@ -1,9 +1,8 @@
 import { Hono } from "hono";
 import { digestPath, type Insight, isValidYmd, renderDailyDigest } from "../../core/index.js";
 import type { AppEnv } from "../app.js";
-import { envDefaults } from "../env.js";
 import { runDigestForUser, toMemoRecords } from "../jobs/digest.js";
-import { createGeminiClient } from "../lib/gemini.js";
+import { createGeminiFor } from "../lib/gemini-factory.js";
 
 export const digestRoutes = new Hono<AppEnv>()
   .get("/:date", async (c) => {
@@ -40,12 +39,7 @@ export const digestRoutes = new Hono<AppEnv>()
     const date = c.req.param("date");
     if (!isValidYmd(date)) return c.json({ error: "invalid date" }, 400);
     const deps = c.get("deps");
-    const gemini = createGeminiClient({
-      apiKey: c.env.GEMINI_API_KEY,
-      model: envDefaults(c.env).model,
-      baseUrl: c.env.GEMINI_BASE_URL,
-      fetchImpl: deps.fetch,
-    });
+    const gemini = createGeminiFor(c.env, deps.fetch);
     const outcome = await runDigestForUser(
       { env: c.env, deps, repo: c.get("repo"), gemini },
       c.get("user"),

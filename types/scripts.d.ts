@@ -9,6 +9,10 @@ declare module "*/check-claude-md.mjs" {
     exists?: (p: string) => boolean,
   ): boolean;
 }
+declare module "*/check-bundle-size.mjs" {
+  export const WORKER_GZIP_LIMIT: number;
+  export function evaluateSize(bytes: number, limit?: number): { ok: boolean; message: string };
+}
 declare module "*/sync-wrangler-from-terraform.mjs" {
   export function replaceDatabaseId(jsonc: string, id: string): string;
 }

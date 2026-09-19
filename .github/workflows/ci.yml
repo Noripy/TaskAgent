@@ -1,5 +1,7 @@
 name: CI
 
+# ローカルと同じ Docker イメージの中で検証する（「自分の PC では通る」を無くす）。
+# 中身は pnpm verify = lint → check:docs → typecheck → unit → workers → build → バンドルサイズ。
 on:
   pull_request:
   push:
@@ -13,65 +15,25 @@ permissions:
   contents: read
 
 jobs:
-  # 速いチェックを先に落とす（Loop Engineering: フィードバックを短く）
-  static:
-    name: lint & typecheck
+  verify:
+    name: verify (dev イメージ内)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm check:docs
-      - run: pnpm typecheck
 
-  unit:
-    name: unit tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm test:unit
+      - uses: docker/setup-buildx-action@v3
 
-  integration:
-    name: workerd integration tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      # レイヤキャッシュを GitHub Actions に置く。依存が変わらなければ deps 層は再利用される
+      - name: Build image (target=ci)
+        uses: docker/build-push-action@v6
         with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm test:workers
+          context: .
+          target: ci
+          load: true
+          tags: taskagent-ci:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-  build:
-    name: build (worker + spa)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [static]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Worker bundle size (free tier limit is 3MB gzipped)
-        run: |
-          gzip -c dist/taskagent/index.js | wc -c | awk '{ printf "gzipped worker: %d bytes\n", $1; if ($1 > 3000000) { print "::error::worker bundle exceeds 3MB"; exit 1 } }'
+      - name: pnpm verify
+        run: docker run --rm taskagent-ci:${{ github.sha }} pnpm verify

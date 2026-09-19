@@ -24,8 +24,9 @@ flowchart LR
     REPO[("利用者の GitHub リポジトリ<br/>notes/YYYY/MM/YYYY-MM-DD.md")]
   end
 
-  subgraph DEV["開発・運用"]
-    GA["GitHub Actions<br/>CI: pnpm verify<br/>CD: wrangler deploy"]
+  subgraph DEV["開発とデリバリー（同じ Docker イメージ）"]
+    DK["開発者の PC: Docker Compose<br/>workerd で Workers/D1/Cron を再現<br/>GEMINI_FAKE=1 でオフライン可"]
+    GA["GitHub Actions<br/>CI: pnpm verify（同イメージ内）<br/>CD: migrate + wrangler deploy"]
   end
 
   B -- "HTTPS" --> SA
@@ -36,22 +37,29 @@ flowchart LR
   B -- "OAuth 認可" --> GHO --> W
   CRON --> W
   W -- "PUT /repos/:o/:r/contents/:path" --> GHC --> REPO
-  GA -- "deploy" --> W
+  DK -- "git push" --> GA
+  GA -- "wrangler deploy" --> W
+  GA -- "d1 migrations apply" --> D1
 ```
+
+開発・CI・デプロイは同じイメージ（`Dockerfile` の `dev` / `ci` ステージ）の中で動く。詳細は [06. CI/CD パイプライン](06-cicd-pipeline.md)。
 
 ## レイヤ対応表
 
-| レイヤ | 実体 | 場所 | 無料枠の上限（2026-09 時点、公式ページで要再確認） |
-|---|---|---|---|
-| IaaS/エッジ | Cloudflare Workers | `src/server` | 100,000 req/日、CPU 10ms/req |
-| 静的配信 | Workers Static Assets | `dist/client` | リクエスト無制限 |
-| DB | D1 | `migrations` | 5GB、読 5M 行/日、書 100k 行/日 |
-| ジョブ | Cron Triggers | `wrangler.jsonc` `triggers.crons` | 無料プランで利用可 |
-| LLM ゲートウェイ | AI Gateway（任意） | `GEMINI_BASE_URL` | 無料 |
-| LLM | Gemini API（AI Studio キー） | `lib/gemini.ts` | 無料枠あり（RPM/RPD 制限） |
-| 認証 | GitHub OAuth App | `routes/auth.ts` | 無料 |
-| 永続ノート | 利用者の GitHub リポジトリ | `lib/github.ts` | 無料 |
-| CI/CD | GitHub Actions | `.github/workflows` | public: 無制限 / private: 2,000 分/月 |
+この構成は **すべて workerd（miniflare）で 1 プロセスにローカル再現できる**ことを条件に選んでいる。
+DB サーバーや Redis のような追加コンテナが要らないため、compose のサービスは実質 1 つで済む。
+
+| レイヤ | 実体 | 場所 | 無料枠の上限（2026-09 時点、公式ページで要再確認） | Docker でローカル再現 |
+|---|---|---|---|---|
+| IaaS/エッジ | Cloudflare Workers | `src/server` | 100,000 req/日、CPU 10ms/req | ◎ workerd |
+| 静的配信 | Workers Static Assets | `dist/client` | リクエスト無制限 | ◎ Vite + `@cloudflare/vite-plugin` |
+| DB | D1 | `migrations` | 5GB、読 5M 行/日、書 100k 行/日 | ◎ `.wrangler/state`（named volume で永続化） |
+| ジョブ | Cron Triggers | `wrangler.jsonc` `triggers.crons` | 無料プランで利用可 | ○ `wrangler dev --test-scheduled` |
+| LLM ゲートウェイ | AI Gateway（任意） | `GEMINI_BASE_URL` | 無料 | × リモート専用 |
+| LLM | Gemini API（AI Studio キー） | `lib/gemini.ts` | 無料枠あり（RPM/RPD 制限） | △ `GEMINI_FAKE=1` のフェイクで代替 |
+| 認証 | GitHub OAuth App | `routes/auth.ts` | 無料 | × 本物を使う |
+| 永続ノート | 利用者の GitHub リポジトリ | `lib/github.ts` | 無料 | × 本物を使う |
+| CI/CD | GitHub Actions | `.github/workflows` | public: 無制限 / private: 2,000 分/月 | ◎ 同じ `Dockerfile` の `ci` ステージ |
 
 ## リクエストの通り道
 

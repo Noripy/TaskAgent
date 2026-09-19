@@ -6,6 +6,10 @@ GEMINI_API_KEY=AIzaSy...
 TOKEN_ENCRYPTION_KEY=
 # 任意の長いランダム文字列: openssl rand -hex 32
 SESSION_SECRET=
+# オフライン開発: 1 にすると Gemini を呼ばずフェイク応答を返す（API キー不要・無料枠を消費しない）。
+# Docker だけで「投げる → 質問 → メモ → 振り返り」を通しで試せる。production では使えない。
+GEMINI_FAKE=1
+
 # 任意: Cloudflare AI Gateway を通す場合（無料。キャッシュ・ログ・レート制限）
 # GEMINI_BASE_URL=https://gateway.ai.cloudflare.com/v1/<ACCOUNT_ID>/<GATEWAY>/google-ai-studio
 APP_ENV=development

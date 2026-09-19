@@ -1,27 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { renderDailyDigest, renderMemoMarkdown } from "../../src/core/markdown.js";
-import { emptyMemo } from "../../src/core/memo.js";
+import { sampleInsight, sampleMemoRecord } from "../fixtures/memo.js";
 
-const rec = {
-  id: "m1",
-  createdAtIso: "2026-09-17T09:00:00.000Z",
-  memo: {
-    ...emptyMemo(),
-    title: "先輩レビュー",
-    summary: "資料構成の指摘を受けた。",
-    facts: ["田中さんが構成順を変えるよう言った"],
-    keep: ["その場でメモできた"],
-    try: ["先に目次を見せる"],
-    next_actions: [{ text: "目次案を 3 案書く", minutes: 15, due: "2026-09-18" }],
-    people: ["田中さん"],
-    tags: ["資料"],
-    horenso: {
-      kind: "報告" as const,
-      to: "田中さん",
-      draft: "構成を修正しました。\n明日目次案を持っていきます。",
-    },
-  },
-};
+const rec = sampleMemoRecord();
 
 describe("renderMemoMarkdown", () => {
   it("is deterministic and includes all sections", () => {
@@ -67,12 +48,7 @@ describe("renderDailyDigest", () => {
       date: "2026-09-17",
       timeZone: "Asia/Tokyo",
       memos: [later, rec],
-      insight: {
-        good: ["相談できた"],
-        actions: ["3 行で報告する"],
-        message: "70 点で出そう。",
-        communication: { focus: null, phrase: null },
-      },
+      insight: sampleInsight({ actions: ["3 行で報告する"] }),
     });
     expect(md.startsWith("---\ndate: 2026-09-17\n")).toBe(true);
     expect(md).toContain("## 今日の振り返り");

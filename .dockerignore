@@ -1,0 +1,25 @@
+# 秘密情報は絶対にイメージへ入れない
+.dev.vars
+.env
+.env.*
+infra/terraform/backend.hcl
+infra/terraform/terraform.tfvars
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+
+# ホスト側の成果物（プラットフォーム依存のバイナリを含む）
+node_modules
+dist
+.wrangler
+coverage
+*.tsbuildinfo
+
+# イメージに要らないもの
+# .git は除外してよい（Biome は .git 無しでも動くことを確認済み）。
+# .github は除外しない: check:docs が .claude/rules の paths として .github/workflows を検証するため、
+# 除外するとイメージ内でだけ verify が落ちる（実際に CI で踏んだ）。
+.git
+.claude/settings.local.json
+infra/terraform/.terraform
+**/*.log
+.DS_Store

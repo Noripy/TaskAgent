@@ -4,7 +4,19 @@ import { createApp } from "../../src/server/app.js";
 import { createRepo } from "../../src/server/db/repo.js";
 import { runScheduledDigests } from "../../src/server/jobs/digest.js";
 import { createGeminiClient } from "../../src/server/lib/gemini.js";
-import { fakeExternal, insightReply, questionReply, readyReply, seedUser } from "./helpers.js";
+import {
+  apiClient,
+  fakeExternal,
+  insightReply,
+  questionReply,
+  readyReply,
+  setupApi,
+  TEST_GITHUB_ID,
+} from "./helpers.js";
+
+const DATE = "2026-09-17";
+const DIGEST_PATH = `notes/2026/09/${DATE}.md`;
+const REPO = { repo_owner: "tester", repo_name: "notes" };
 
 async function resetDb() {
   await env.DB.batch([
@@ -17,30 +29,25 @@ async function resetDb() {
   ]);
 }
 
+/** base64 の GitHub コミット本文を Markdown に戻す。 */
+function decodeCommitted(content: string): string {
+  return new TextDecoder().decode(Uint8Array.from(atob(content), (ch) => ch.charCodeAt(0)));
+}
+
 describe("API", () => {
   beforeEach(resetDb);
 
   it("health is public, memos require auth", async () => {
-    const app = createApp(fakeExternal().deps);
-    expect((await app.request("/api/health", {}, env)).status).toBe(200);
-    expect((await app.request("/api/memos", {}, env)).status).toBe(401);
+    const anon = apiClient(createApp(fakeExternal().deps));
+    expect((await anon.get("/api/health")).status).toBe(200);
+    expect((await anon.get("/api/memos")).status).toBe(401);
   });
 
   it("capture → clarification → memo (full rally)", async () => {
-    const ext = fakeExternal();
-    const app = createApp(ext.deps);
-    const { cookie } = await seedUser(ext.deps);
+    const { ext, api } = await setupApi();
     ext.geminiReplies.push(questionReply("誰からの指摘ですか？", "いつまでですか？"), readyReply());
 
-    const r1 = await app.request(
-      "/api/captures",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json", cookie },
-        body: JSON.stringify({ text: "資料の順番おかしいって言われた" }),
-      },
-      env,
-    );
+    const r1 = await api.post("/api/captures", { text: "資料の順番おかしいって言われた" });
     expect(r1.status).toBe(201);
     const j1 = (await r1.json()) as {
       kind: string;
@@ -52,15 +59,9 @@ describe("API", () => {
     expect(j1.round).toBe(1);
     expect(j1.questions).toHaveLength(2);
 
-    const r2 = await app.request(
-      `/api/captures/${j1.captureId}/answer`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json", cookie },
-        body: JSON.stringify({ text: "田中さん。金曜まで。" }),
-      },
-      env,
-    );
+    const r2 = await api.post(`/api/captures/${j1.captureId}/answer`, {
+      text: "田中さん。金曜まで。",
+    });
     expect(r2.status).toBe(200);
     const j2 = (await r2.json()) as { kind: string; memoId: string; memo: { title: string } };
     expect(j2.kind).toBe("memo");
@@ -77,98 +78,51 @@ describe("API", () => {
     expect(userText).toContain("ユーザー: 田中さん。金曜まで。");
 
     // 確定後の再回答は 409
-    const r3 = await app.request(
-      `/api/captures/${j1.captureId}/answer`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json", cookie },
-        body: JSON.stringify({ text: "x" }),
-      },
-      env,
-    );
+    const r3 = await api.post(`/api/captures/${j1.captureId}/answer`, { text: "x" });
     expect(r3.status).toBe(409);
 
-    const list = await app.request("/api/memos?date=2026-09-17", { headers: { cookie } }, env);
+    const list = await api.get(`/api/memos?date=${DATE}`);
     const jl = (await list.json()) as { memos: Array<{ id: string }> };
     expect(jl.memos).toHaveLength(1);
     expect(jl.memos[0]?.id).toBe(j2.memoId);
   });
 
   it("rejects empty capture and invalid llm output", async () => {
-    const ext = fakeExternal();
-    const app = createApp(ext.deps);
-    const { cookie } = await seedUser(ext.deps);
-    const bad = await app.request(
-      "/api/captures",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json", cookie },
-        body: JSON.stringify({ text: "   " }),
-      },
-      env,
-    );
-    expect(bad.status).toBe(400);
+    const { ext, api } = await setupApi();
+    expect((await api.post("/api/captures", { text: "   " })).status).toBe(400);
 
     ext.geminiReplies.push("not json");
-    const r = await app.request(
-      "/api/captures",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json", cookie },
-        body: JSON.stringify({ text: "x" }),
-      },
-      env,
-    );
+    const r = await api.post("/api/captures", { text: "x" });
     expect(r.status).toBe(500);
     expect(((await r.json()) as { error: string }).error).toContain("JSON");
   });
 
   it("settings verify repo write permission", async () => {
-    const ext = fakeExternal();
-    const app = createApp(ext.deps);
-    const { cookie } = await seedUser(ext.deps);
+    const { ext, api } = await setupApi();
     ext.github["GET /repos/tester/notes"] = () =>
       Response.json({ default_branch: "main", permissions: { push: true } });
-    const ok = await app.request(
-      "/api/settings",
-      {
-        method: "PUT",
-        headers: { "content-type": "application/json", cookie },
-        body: JSON.stringify({
-          repo_owner: "tester",
-          repo_name: "notes",
-          repo_branch: "main",
-          repo_path_prefix: "notes",
-          timezone: "Asia/Tokyo",
-          digest_hour: 22,
-        }),
-      },
-      env,
-    );
+
+    const ok = await api.put("/api/settings", {
+      ...REPO,
+      repo_branch: "main",
+      repo_path_prefix: "notes",
+      timezone: "Asia/Tokyo",
+      digest_hour: 22,
+    });
     expect(ok.status).toBe(200);
     expect(((await ok.json()) as { user: { digest_hour: number } }).user.digest_hour).toBe(22);
 
-    const missing = await app.request(
-      "/api/settings",
-      {
-        method: "PUT",
-        headers: { "content-type": "application/json", cookie },
-        body: JSON.stringify({ repo_owner: "tester", repo_name: "nope" }),
-      },
-      env,
-    );
+    const missing = await api.put("/api/settings", { repo_owner: "tester", repo_name: "nope" });
     expect(missing.status).toBe(422);
   });
 
   it("manual digest commit renders markdown and calls GitHub", async () => {
-    const ext = fakeExternal();
-    const app = createApp(ext.deps);
-    const { cookie } = await seedUser(ext.deps, { repo_owner: "tester", repo_name: "notes" });
+    const { ext, api } = await setupApi(REPO);
     ext.geminiReplies.push(readyReply(), insightReply());
-    ext.github["GET /repos/tester/notes/contents/notes/2026/09/2026-09-17.md"] = () =>
+    ext.github[`GET /repos/tester/notes/contents/${DIGEST_PATH}`] = () =>
       new Response("{}", { status: 404 });
     let putBody: { content: string; message: string; branch: string } | null = null;
-    ext.github["PUT /repos/tester/notes/contents/notes/2026/09/2026-09-17.md"] = ({ body }) => {
+    ext.github[`PUT /repos/tester/notes/contents/${DIGEST_PATH}`] = ({ body }) => {
       putBody = body as typeof putBody;
       return Response.json(
         { commit: { sha: "c0ffee" }, content: { sha: "b10b" } },
@@ -176,51 +130,34 @@ describe("API", () => {
       );
     };
 
-    await app.request(
-      "/api/captures",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json", cookie },
-        body: JSON.stringify({ text: "x" }),
-      },
-      env,
-    );
-    const r = await app.request(
-      "/api/digests/2026-09-17/commit",
-      { method: "POST", headers: { cookie } },
-      env,
-    );
+    await api.post("/api/captures", { text: "x" });
+    const r = await api.post(`/api/digests/${DATE}/commit`);
     expect(r.status).toBe(200);
     expect(await r.json()).toMatchObject({
       status: "committed",
       commitSha: "c0ffee",
-      path: "notes/2026/09/2026-09-17.md",
+      path: DIGEST_PATH,
     });
+
     const pb = putBody as unknown as { content: string; message: string; branch: string };
     expect(pb.branch).toBe("main");
-    expect(pb.message).toBe("notes: 2026-09-17 (1 memos)");
-    const md = new TextDecoder().decode(
-      Uint8Array.from(atob(pb.content), (ch) => ch.charCodeAt(0)),
-    );
-    expect(md).toContain("# 2026-09-17 の記録");
+    expect(pb.message).toBe(`notes: ${DATE} (1 memos)`);
+    const md = decodeCommitted(pb.content);
+    expect(md).toContain(`# ${DATE} の記録`);
     expect(md).toContain("## 今日の振り返り");
     expect(md).toContain("### 先輩レビュー");
     expect(md).toContain("**伝え方**");
-    expect(md).toContain("言い換え: 構成を見直します");
+    expect(md).toContain("言い換え: 資料の構成を見直したいです");
     expect(md).toContain("**伝え方の改善点**");
     expect(md).toContain("明日使うフレーズ: 「結論からお伝えすると、〜です。」");
 
     // 2 回目は変更なしでスキップ（GitHub にも Gemini にも追加リクエストしない）
     const before = ext.calls.length;
-    const r2 = await app.request(
-      "/api/digests/2026-09-17/commit",
-      { method: "POST", headers: { cookie } },
-      env,
-    );
+    const r2 = await api.post(`/api/digests/${DATE}/commit`);
     expect(await r2.json()).toMatchObject({ status: "skipped", reason: "unchanged" });
     expect(ext.calls.length).toBe(before);
 
-    const status = await app.request("/api/digests/2026-09-17", { headers: { cookie } }, env);
+    const status = await api.get(`/api/digests/${DATE}`);
     const js = (await status.json()) as {
       digest: { status: string; commit_sha: string };
       preview: string;
@@ -230,71 +167,38 @@ describe("API", () => {
   });
 
   it("digest failure is recorded and does not throw", async () => {
-    const ext = fakeExternal();
-    const app = createApp(ext.deps);
-    const { cookie } = await seedUser(ext.deps, { repo_owner: "tester", repo_name: "notes" });
+    const { ext, api, user } = await setupApi(REPO);
     ext.geminiReplies.push(readyReply(), insightReply());
     ext.github["PUT *"] = () => Response.json({ message: "forbidden" }, { status: 403 });
-    await app.request(
-      "/api/captures",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json", cookie },
-        body: JSON.stringify({ text: "x" }),
-      },
-      env,
-    );
-    const r = await app.request(
-      "/api/digests/2026-09-17/commit",
-      { method: "POST", headers: { cookie } },
-      env,
-    );
-    expect(r.status).toBe(502);
-    const d = await createRepo(env.DB).getDigest(
-      (await createRepo(env.DB).findUserByGithubId(42))!.id,
-      "2026-09-17",
-    );
-    expect(d?.status).toBe("failed");
-    expect(d?.last_error).toContain("403");
+
+    await api.post("/api/captures", { text: "x" });
+    expect((await api.post(`/api/digests/${DATE}/commit`)).status).toBe(502);
+
+    const digest = await createRepo(env.DB).getDigest(user.id, DATE);
+    expect(digest?.status).toBe("failed");
+    expect(digest?.last_error).toContain("403");
   });
 
   it("scheduled job runs only at the user's digest hour", async () => {
-    const ext = fakeExternal();
-    const app = createApp(ext.deps);
     // deps.now() は 12:00 JST 固定なので digest_hour=12 のユーザーだけ対象
-    const { cookie } = await seedUser(ext.deps, {
-      repo_owner: "tester",
-      repo_name: "notes",
-      digest_hour: 12,
-    });
+    const { ext, api } = await setupApi({ ...REPO, digest_hour: 12 });
     ext.geminiReplies.push(readyReply(), insightReply());
     ext.github["PUT *"] = () => Response.json({ commit: { sha: "s" } }, { status: 201 });
-    await app.request(
-      "/api/captures",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json", cookie },
-        body: JSON.stringify({ text: "x" }),
-      },
-      env,
-    );
+    await api.post("/api/captures", { text: "x" });
 
     const gemini = createGeminiClient({ apiKey: "k", model: "m", fetchImpl: ext.deps.fetch });
-    const results = await runScheduledDigests({
-      env,
-      deps: ext.deps,
-      repo: createRepo(env.DB),
-      gemini,
-    });
+    const job = { env, deps: ext.deps, repo: createRepo(env.DB), gemini };
+
+    const results = await runScheduledDigests(job);
     expect(results).toHaveLength(1);
     expect(results[0]?.outcome.status).toBe("committed");
 
     // 時刻が合わないユーザーはスキップ
+    const stored = await createRepo(env.DB).findUserByGithubId(TEST_GITHUB_ID);
     await createRepo(env.DB).updateUserSettings(
-      results[0]!.userId,
+      stored!.id,
       {
-        repo_owner: "tester",
-        repo_name: "notes",
+        ...REPO,
         repo_branch: "main",
         repo_path_prefix: "notes",
         timezone: "Asia/Tokyo",
@@ -302,8 +206,6 @@ describe("API", () => {
       },
       "2026-09-17T03:00:00.000Z",
     );
-    expect(
-      await runScheduledDigests({ env, deps: ext.deps, repo: createRepo(env.DB), gemini }),
-    ).toHaveLength(0);
+    expect(await runScheduledDigests(job)).toHaveLength(0);
   });
 });
