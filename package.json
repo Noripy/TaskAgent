@@ -11,8 +11,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "deploy": "vite build && wrangler deploy",
+    "cf:deploy": "vite build && wrangler deploy",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "typecheck": "tsc -p tsconfig.core.json && tsc -p tsconfig.json && tsc -p tsconfig.client.json && tsc -p tsconfig.node.json",
@@ -20,12 +19,17 @@
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test:workers": "vitest run --config vitest.workers.config.ts",
     "test:watch": "vitest --config vitest.unit.config.ts",
-    "verify": "pnpm lint && pnpm check:docs && pnpm typecheck && pnpm test && pnpm build",
+    "verify": "pnpm lint && pnpm check:docs && pnpm typecheck && pnpm test && pnpm build && pnpm check:size",
     "db:migrate:local": "wrangler d1 migrations apply taskagent-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply taskagent-db --remote",
     "cf-typegen": "wrangler types",
     "check:docs": "node scripts/check-claude-md.mjs",
-    "infra:sync": "node scripts/sync-wrangler-from-terraform.mjs"
+    "infra:sync": "node scripts/sync-wrangler-from-terraform.mjs",
+    "check:size": "node scripts/check-bundle-size.mjs",
+    "docker:dev": "docker compose up --build app",
+    "docker:verify": "docker compose build verify && docker compose run --rm verify",
+    "docker:shell": "docker compose build cli && docker compose run --rm cli bash",
+    "docker:reset": "docker compose down --remove-orphans && docker volume rm -f taskagent_node_modules && docker compose up --build app"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.5",

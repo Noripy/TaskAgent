@@ -1,28 +1,28 @@
 import { describe, expect, it } from "vitest";
 import { renderDailyDigest, renderMemoMarkdown } from "../../src/core/markdown.js";
-import { emptyMemo, MemoSchema } from "../../src/core/memo.js";
+import { MemoSchema } from "../../src/core/memo.js";
 import { INSIGHT_SYSTEM_PROMPT, MEMOIZE_SYSTEM_PROMPT } from "../../src/core/prompts.js";
 import {
   InsightSchema,
   parseInsightResponse,
   parseMemoizeResponse,
 } from "../../src/core/protocol.js";
+import {
+  sampleCommunication,
+  sampleInsight,
+  sampleMemo,
+  sampleMemoRecord,
+} from "../fixtures/memo.js";
 
-const comm = {
-  said: "あの、資料なんですけど、順番がちょっと…",
-  better: "資料の構成を見直したいです。理由は流れが分かりにくいためで、目次案を明日お見せします。",
-  vocabulary: [{ word: "所感", usage: "報告の末尾で自分の見立てを添えるとき" }],
-  delivery_tip: "結論を最初の 1 文で言い切る",
-};
+const readyPayload = (memo: unknown) => JSON.stringify({ status: "ready", questions: [], memo });
+const withFocus = sampleInsight({
+  communication: { focus: "結論から話す", phrase: "結論からお伝えすると、〜です。" },
+});
 
 describe("communication (語彙力・伝え方)", () => {
   it("MemoSchema には communication があり、古いメモ（フィールド無し）も既定値で読める", () => {
-    const legacy = { ...emptyMemo() } as Record<string, unknown>;
-    delete legacy.communication;
-    legacy.title = "t";
-    legacy.summary = "s";
-    const parsed = MemoSchema.parse(legacy);
-    expect(parsed.communication).toEqual({
+    const { communication: _dropped, ...legacy } = sampleMemo();
+    expect(MemoSchema.parse(legacy).communication).toEqual({
       said: null,
       better: null,
       vocabulary: [],
@@ -31,30 +31,24 @@ describe("communication (語彙力・伝え方)", () => {
   });
 
   it("communication を含む LLM 応答を受け入れる", () => {
-    const memo = { ...emptyMemo(), title: "t", summary: "s", communication: comm };
-    const r = parseMemoizeResponse(JSON.stringify({ status: "ready", questions: [], memo }));
+    const r = parseMemoizeResponse(
+      readyPayload(sampleMemo({ communication: sampleCommunication() })),
+    );
     expect(r.kind).toBe("memo");
     if (r.kind === "memo") expect(r.memo.communication.vocabulary[0]?.word).toBe("所感");
   });
 
   it("語彙は 3 個まで", () => {
-    const memo = {
-      ...emptyMemo(),
-      title: "t",
-      summary: "s",
-      communication: { ...comm, vocabulary: Array(4).fill({ word: "w", usage: "u" }) },
-    };
-    expect(() =>
-      parseMemoizeResponse(JSON.stringify({ status: "ready", questions: [], memo })),
-    ).toThrow();
+    const memo = sampleMemo({
+      communication: sampleCommunication({ vocabulary: Array(4).fill({ word: "w", usage: "u" }) }),
+    });
+    expect(() => parseMemoizeResponse(readyPayload(memo))).toThrow();
   });
 
   it("Markdown に『伝え方』セクションを描画する", () => {
-    const md = renderMemoMarkdown({
-      id: "m1",
-      createdAtIso: "2026-09-17T09:00:00.000Z",
-      memo: { ...emptyMemo(), title: "t", summary: "s", communication: comm },
-    });
+    const md = renderMemoMarkdown(
+      sampleMemoRecord({ memo: sampleMemo({ communication: sampleCommunication() }) }),
+    );
     expect(md).toContain("**伝え方**");
     expect(md).toContain("言った: あの、資料なんですけど");
     expect(md).toContain("言い換え: 資料の構成を見直したいです");
@@ -63,26 +57,15 @@ describe("communication (語彙力・伝え方)", () => {
   });
 
   it("communication が空なら『伝え方』セクションを出さない", () => {
-    const md = renderMemoMarkdown({
-      id: "m1",
-      createdAtIso: "2026-09-17T09:00:00.000Z",
-      memo: { ...emptyMemo(), title: "t", summary: "s" },
-    });
-    expect(md).not.toContain("伝え方");
+    expect(renderMemoMarkdown(sampleMemoRecord())).not.toContain("伝え方");
   });
 
   it("Insight に伝え方のフォーカスとフレーズがあり、古い形式も読める", () => {
-    const full = parseInsightResponse(
-      JSON.stringify({
-        good: ["g"],
-        actions: ["a"],
-        message: "m",
-        communication: { focus: "結論から話す", phrase: "結論からお伝えすると、〜です。" },
-      }),
-    );
+    const full = parseInsightResponse(JSON.stringify(withFocus));
     expect(full.communication.focus).toBe("結論から話す");
-    const legacy = InsightSchema.parse({ good: ["g"], actions: ["a"], message: "m" });
-    expect(legacy.communication).toEqual({ focus: null, phrase: null });
+
+    const { communication: _dropped, ...legacy } = sampleInsight();
+    expect(InsightSchema.parse(legacy).communication).toEqual({ focus: null, phrase: null });
   });
 
   it("日次 Markdown に伝え方の改善点を描画する", () => {
@@ -90,12 +73,7 @@ describe("communication (語彙力・伝え方)", () => {
       date: "2026-09-17",
       timeZone: "Asia/Tokyo",
       memos: [],
-      insight: {
-        good: ["g"],
-        actions: ["a"],
-        message: "m",
-        communication: { focus: "結論から話す", phrase: "結論からお伝えすると、〜です。" },
-      },
+      insight: withFocus,
     });
     expect(md).toContain("**伝え方の改善点**");
     expect(md).toContain("結論から話す");

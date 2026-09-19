@@ -1,20 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { emptyMemo } from "../../src/core/memo.js";
 import {
   ProtocolError,
   parseInsightResponse,
   parseMemoizeResponse,
 } from "../../src/core/protocol.js";
+import { sampleMemo } from "../fixtures/memo.js";
 
-const readyMemo = {
-  ...emptyMemo(),
-  title: "先輩レビュー",
-  summary: "先輩から資料の構成について指摘を受けた",
-  facts: ["田中さんが 9/17 に構成の順序を変えるよう言った"],
-  keep: ["指摘をその場でメモできた"],
-  next_actions: [{ text: "目次案を 3 案書く", minutes: 15, due: null }],
-  horenso: { kind: "報告", to: "田中さん", draft: "構成を修正しました。" },
-};
+const readyMemo = sampleMemo();
 
 describe("parseMemoizeResponse", () => {
   it("returns questions when status=need_clarification", () => {

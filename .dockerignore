@@ -1,0 +1,23 @@
+# 秘密情報は絶対にイメージへ入れない
+.dev.vars
+.env
+.env.*
+infra/terraform/backend.hcl
+infra/terraform/terraform.tfvars
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+
+# ホスト側の成果物（プラットフォーム依存のバイナリを含む）
+node_modules
+dist
+.wrangler
+coverage
+*.tsbuildinfo
+
+# イメージに要らないもの
+.git
+.github
+.claude/settings.local.json
+infra/terraform/.terraform
+**/*.log
+.DS_Store

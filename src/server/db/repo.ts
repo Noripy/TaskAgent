@@ -67,9 +67,6 @@ export interface DigestRow {
 export function createRepo(db: D1Database) {
   return {
     // ---- users
-    async findUserById(id: string) {
-      return db.prepare("SELECT * FROM users WHERE id = ?").bind(id).first<UserRow>();
-    },
     async findUserByGithubId(githubId: number) {
       return db.prepare("SELECT * FROM users WHERE github_id = ?").bind(githubId).first<UserRow>();
     },
@@ -237,36 +234,12 @@ export function createRepo(db: D1Database) {
         )
         .run();
     },
-    async getMemo(id: string, userId: string) {
-      return db
-        .prepare("SELECT * FROM memos WHERE id = ? AND user_id = ?")
-        .bind(id, userId)
-        .first<MemoRow>();
-    },
     async listMemosByDate(userId: string, localDate: string) {
       const r = await db
         .prepare("SELECT * FROM memos WHERE user_id = ? AND local_date = ? ORDER BY created_at")
         .bind(userId, localDate)
         .all<MemoRow>();
       return r.results;
-    },
-    async listRecentDates(userId: string, limit = 30) {
-      const r = await db
-        .prepare(
-          "SELECT local_date, COUNT(*) AS n FROM memos WHERE user_id = ? GROUP BY local_date ORDER BY local_date DESC LIMIT ?",
-        )
-        .bind(userId, limit)
-        .all<{ local_date: string; n: number }>();
-      return r.results;
-    },
-    async updateMemo(id: string, userId: string, memo: Memo, now: string) {
-      const r = await db
-        .prepare(
-          "UPDATE memos SET title = ?, memo_json = ?, updated_at = ? WHERE id = ? AND user_id = ?",
-        )
-        .bind(memo.title, JSON.stringify(memo), now, id, userId)
-        .run();
-      return (r.meta.changes ?? 0) > 0;
     },
     async deleteMemo(id: string, userId: string) {
       const r = await db

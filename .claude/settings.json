@@ -26,7 +26,9 @@
       "Bash(pnpm check:docs:*)",
       "Bash(terraform fmt:*)",
       "Bash(terraform validate:*)",
-      "Bash(terraform plan:*)"
+      "Bash(terraform plan:*)",
+      "Bash(docker compose config:*)",
+      "Bash(docker compose build:*)"
     ],
     "deny": [
       "Read(./.dev.vars)",
@@ -35,7 +37,7 @@
       "Read(./.env.*)",
       "Read(./pnpm-lock.yaml)",
       "Bash(wrangler secret:*)",
-      "Bash(pnpm deploy:*)",
+      "Bash(pnpm cf:deploy:*)",
       "Bash(wrangler deploy:*)",
       "Bash(pnpm db:migrate:remote:*)",
       "Bash(git push --force:*)",

@@ -7,6 +7,7 @@
 
 | | A. 最小工数プラン | **B. 推奨プラン（採用）** | C. 拡張プラン |
 |---|---|---|---|
+| ローカル環境 | ホストに Node.js を直接 | **Docker Compose（CI と同一イメージ）** | 同左 + Dev Container |
 | フロント | Hono の `hono/jsx` で SSR（ビルド不要） | React SPA（Vite）+ Hono RPC | 同左 + PWA / オフライン |
 | API | Hono on Workers | Hono on Workers | 同左 + Durable Objects（ユーザー単位アクター） |
 | DB | D1 | D1 | D1 + DO SQLite（対話状態） |
@@ -80,7 +81,42 @@ B を採用した理由: A は「対話ラリー」の UI が SSR だと書き�
 | pnpm workspace（`packages/core` + `apps/web`） | 依存の分離が強い。パッケージ単位の並行開発 | `--filter` や `workspace:*` の作法が増え、この規模では手数が価値を上回る | 不採用（v0.1 で採用 → v0.2 で平坦化） |
 | Turborepo / Nx | キャッシュ | この規模では過剰 | 不採用（後から足せる） |
 
-## 8. 無料枠チェックリスト（デプロイ前に確認）
+## 8. ローカル開発環境
+
+要件は「環境依存を避ける」。ホストに Node.js / pnpm / workerd のバージョン差があっても同じ結果になることを最優先にした。
+
+| 候補 | メリット | デメリット | 判定 |
+|---|---|---|---|
+| **Docker Compose（`Dockerfile` の dev ステージ + `compose.yaml`）** | ホストに Node.js を入れなくても動く。Node・pnpm・workerd がコードで固定される。**CI とデプロイで同じイメージを使える** | 初回のイメージビルドに時間がかかる。バインドマウントのファイル監視が macOS/Windows で遅い（polling で回避） | **採用**（[ADR-0007](adr/0007-docker-for-local-dev.md)） |
+| Dev Container（`devcontainer.json`） | エディタ統合が最良。同じ `Dockerfile` を再利用できる | VS Code / Cursor に依存し、CLI だけで完結しない | 併用可（後から `Dockerfile` を指すだけで足せる） |
+| mise / asdf でホストに直接インストール | 起動が速い。Docker 不要 | ホスト OS の差が残り、要件を満たさない | 不採用（Docker が使えない場合の代替として `docs/dev/setup.md` に残す） |
+| Nix (flake) | 再現性は最も強い | 学習コストが高く、チームに広げにくい | 不採用 |
+
+### なぜこの Cloudflare 構成が Docker と相性が良いか
+
+| Cloudflare プリミティブ | 無料枠 | Docker でローカル再現 | 備考 |
+|---|---|---|---|
+| Workers（Hono） | ○ | ◎ workerd がそのまま動く | ベースイメージは glibc 必須（alpine 不可） |
+| Workers Static Assets | ○ | ◎ Vite の統合プラグイン | |
+| D1 | ○ | ◎ `.wrangler/state` に SQLite 実体 | named volume で永続化 |
+| Cron Triggers | ○ | ○ `--test-scheduled` で手動発火 | |
+| AI Gateway | ○ | × リモート専用 | `GEMINI_FAKE=1` で迂回 |
+| Queues | ×（有料） | － | そもそも不採用（§5） |
+| Durable Objects | ○ | ◎ | 拡張プラン用 |
+
+**追加コンテナが 1 つも要らない**のがこの構成の強み。PostgreSQL や Redis を選んでいたら compose に DB サービスと初期化スクリプトが増えていた。
+外部 API だけはローカル再現できないため、Gemini には `GEMINI_FAKE=1`（`src/server/lib/gemini-fake.ts`）を用意し、API キー無し・オフラインでも一連の流れを試せるようにした。GitHub API は製品価値そのものなので本物を使う。
+
+## 9. CI/CD の実行環境
+
+| 候補 | メリット | デメリット | 判定 |
+|---|---|---|---|
+| **同じ Docker イメージ内で `pnpm verify` → `wrangler deploy`** | ローカル・CI・デプロイが同一環境。`Dockerfile` 自体も毎 PR で検証される。デプロイするのは検証したのと同じイメージの成果物 | 単一ジョブなので並列化を捨てる（約 2〜3 分）。イメージビルドの待ちが乗る | **採用**（[ADR-0008](adr/0008-run-ci-inside-dev-image.md)） |
+| runner に直接 setup-node + pnpm（v0.2 まで） | 起動が速く、ジョブを並列に分けられる | ローカル（Docker）と環境が違い、差分が CI をすり抜ける | 不採用 |
+| イメージを GHCR に push し、各ジョブが `container:` で使う | 並列化と環境一致を両立できる | レジストリの権限運用と、初回の鶏と卵問題 | 規模が増えたら移行（拡張プラン） |
+| セルフホストランナー | 実行時間の制約が無い | 管理コスト。無料枠で完結させる方針に合わない | 不採用 |
+
+## 10. 無料枠チェックリスト（デプロイ前に確認）
 
 - [ ] Workers Free: 100k req/日、CPU 10ms/req、バンドル 3MB（圧縮）
 - [ ] D1: 5GB、5M 行読/日、100k 行書/日
@@ -88,5 +124,6 @@ B を採用した理由: A は「対話ラリー」の UI が SSR だと書き�
 - [ ] Gemini API 無料枠: モデルごとの RPM/RPD。AI Gateway でレート制限を設定
 - [ ] GitHub Actions: public リポジトリは無制限、private は 2,000 分/月
 - [ ] GitHub API: 認証済み 5,000 req/時
+- [ ] Docker Hub: 匿名 pull のレート制限（CI が共有 IP から `node:22-bookworm-slim` を取りに行く）。連続で失敗するようなら `docker/login-action` でログインする
 
 上限値は 2026-09 時点の把握。**公式の料金ページを PR 前に再確認する**（変わりやすい）。

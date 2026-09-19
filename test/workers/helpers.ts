@@ -1,10 +1,23 @@
 import { env } from "cloudflare:test";
+import { Hono } from "hono";
 import { vi } from "vitest";
-import { emptyMemo } from "../../src/core/index.js";
+import { createApp } from "../../src/server/app.js";
 import { createRepo } from "../../src/server/db/repo.js";
 import type { Deps } from "../../src/server/env.js";
 import { encryptString } from "../../src/server/lib/crypto.js";
 import { setSessionCookie } from "../../src/server/lib/session.js";
+import { sampleCommunication, sampleInsight, sampleMemo } from "../fixtures/memo.js";
+
+/** テスト用の GitHub ユーザー ID（seedUser とアサーションで共有する）。 */
+export const TEST_GITHUB_ID = 42;
+
+type App = ReturnType<typeof createApp>;
+type SeedOverrides = Partial<{
+  repo_owner: string;
+  repo_name: string;
+  timezone: string;
+  digest_hour: number;
+}>;
 
 /** 外部 API のフェイク。URL でルーティングして応答を返す。 */
 export function fakeExternal() {
@@ -40,20 +53,46 @@ export function fakeExternal() {
   return { deps, geminiReplies, calls, github };
 }
 
-export async function seedUser(
-  deps: Deps,
-  overrides: Partial<{
-    repo_owner: string;
-    repo_name: string;
-    timezone: string;
-    digest_hour: number;
-  }> = {},
-) {
+/**
+ * HTTP の定型（Cookie・content-type・env の受け渡し）を隠す薄いクライアント。
+ * テスト本体には「何を叩いて何を期待するか」だけが残るようにする。
+ */
+export function apiClient(app: App, cookie?: string) {
+  const headers = (json: boolean) => ({
+    ...(cookie ? { cookie } : {}),
+    ...(json ? { "content-type": "application/json" } : {}),
+  });
+  const send = (path: string, method: string, body?: unknown) =>
+    app.request(
+      path,
+      {
+        method,
+        headers: headers(body !== undefined),
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      },
+      env,
+    );
+  return {
+    get: (path: string) => app.request(path, { headers: headers(false) }, env),
+    post: (path: string, body?: unknown) => send(path, "POST", body),
+    put: (path: string, body: unknown) => send(path, "PUT", body),
+  };
+}
+
+/** よく使う組み立て（フェイク外部 API + アプリ + ログイン済みユーザー）を 1 行にする。 */
+export async function setupApi(overrides: SeedOverrides = {}) {
+  const ext = fakeExternal();
+  const app = createApp(ext.deps);
+  const { user, cookie } = await seedUser(ext.deps, overrides);
+  return { ext, app, user, cookie, api: apiClient(app, cookie) };
+}
+
+export async function seedUser(deps: Deps, overrides: SeedOverrides = {}) {
   const repo = createRepo(env.DB);
   const now = deps.now().toISOString();
   const user = await repo.upsertUserFromGithub({
     id: deps.newId(),
-    github_id: 42,
+    github_id: TEST_GITHUB_ID,
     login: "tester",
     avatar_url: null,
     encrypted_token: await encryptString("gho_test", env.TOKEN_ENCRYPTION_KEY),
@@ -78,7 +117,6 @@ export async function seedUser(
   const sid = deps.newId();
   await repo.createSession(sid, user.id, "2099-01-01T00:00:00.000Z", now);
   // 署名付き Cookie を Hono のヘルパーで生成する
-  const { Hono } = await import("hono");
   const tmp = new Hono();
   tmp.get("/", async (c) => {
     await setSessionCookie(c, env.SESSION_SECRET, sid);
@@ -86,43 +124,26 @@ export async function seedUser(
   });
   const res = await tmp.request("http://localhost/");
   const cookie = (res.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
-  return { user: (await repo.findUserById(user.id))!, cookie };
+  const stored = await repo.findUserByGithubId(TEST_GITHUB_ID);
+  if (!stored) throw new Error("seedUser: ユーザーを読み戻せませんでした");
+  return { user: stored, cookie };
 }
 
-export function readyReply(title = "先輩レビュー") {
-  return JSON.stringify({
+// --- Gemini のスクリプト応答（中身は test/fixtures/memo.ts と共有する） ---
+
+export const readyReply = (title = "先輩レビュー") =>
+  JSON.stringify({
     status: "ready",
     questions: [],
-    memo: {
-      ...emptyMemo(),
-      title,
-      summary: "資料の構成について指摘を受けた。",
-      facts: ["田中さんが構成順を変えるよう言った"],
-      keep: ["指摘をその場でメモできた"],
-      try: ["先に目次を見せる"],
-      next_actions: [{ text: "目次案を 3 案書く", minutes: 15, due: null }],
-      people: ["田中さん"],
-      tags: ["資料"],
-      horenso: { kind: "報告", to: "田中さん", draft: "構成を修正しました。" },
-      communication: {
-        said: "あの、順番がちょっと…",
-        better: "構成を見直します。理由は流れが分かりにくいためです。目次案を明日お見せします。",
-        vocabulary: [{ word: "所感", usage: "報告の末尾で自分の見立てを添えるとき" }],
-        delivery_tip: "結論を最初の 1 文で言い切る",
-      },
-    },
+    memo: sampleMemo({ title, communication: sampleCommunication() }),
   });
-}
 
-export function questionReply(...qs: string[]) {
-  return JSON.stringify({ status: "need_clarification", questions: qs, memo: null });
-}
+export const questionReply = (...questions: string[]) =>
+  JSON.stringify({ status: "need_clarification", questions, memo: null });
 
-export function insightReply() {
-  return JSON.stringify({
-    good: ["相談できた"],
-    actions: ["田中さんに 3 行で報告する"],
-    message: "70 点で出そう。",
-    communication: { focus: "結論から話す", phrase: "結論からお伝えすると、〜です。" },
-  });
-}
+export const insightReply = () =>
+  JSON.stringify(
+    sampleInsight({
+      communication: { focus: "結論から話す", phrase: "結論からお伝えすると、〜です。" },
+    }),
+  );

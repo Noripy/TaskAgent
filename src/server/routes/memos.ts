@@ -24,22 +24,6 @@ export const memoRoutes = new Hono<AppEnv>()
       200,
     );
   })
-  .get("/dates", async (c) => {
-    const dates = await c.get("repo").listRecentDates(c.get("user").id);
-    return c.json({ dates }, 200);
-  })
-  .patch("/:id", zValidator("json", z.object({ memo: MemoSchema })), async (c) => {
-    const ok = await c
-      .get("repo")
-      .updateMemo(
-        c.req.param("id"),
-        c.get("user").id,
-        c.req.valid("json").memo,
-        c.get("deps").now().toISOString(),
-      );
-    if (!ok) return c.json({ error: "not found" }, 404);
-    return c.json({ ok: true }, 200);
-  })
   .delete("/:id", async (c) => {
     const ok = await c.get("repo").deleteMemo(c.req.param("id"), c.get("user").id);
     if (!ok) return c.json({ error: "not found" }, 404);

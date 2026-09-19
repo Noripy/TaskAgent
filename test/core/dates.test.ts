@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  digestPath,
-  isValidYmd,
-  localHour,
-  previousDate,
-  toLocalDateString,
-} from "../../src/core/dates.js";
+import { digestPath, isValidYmd, localHour, toLocalDateString } from "../../src/core/dates.js";
 
 describe("dates", () => {
   it("converts UTC instant to local date", () => {
@@ -17,9 +11,6 @@ describe("dates", () => {
   it("gets local hour", () => {
     expect(localHour(new Date("2026-09-17T12:00:00Z"), "Asia/Tokyo")).toBe(21);
     expect(localHour(new Date("2026-09-17T15:00:00Z"), "Asia/Tokyo")).toBe(0);
-  });
-  it("previousDate crosses month boundary", () => {
-    expect(previousDate("2026-10-01")).toBe("2026-09-30");
   });
   it("validates ymd", () => {
     expect(isValidYmd("2026-02-29")).toBe(false);

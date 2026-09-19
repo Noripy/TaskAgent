@@ -22,14 +22,6 @@ export function localHour(date: Date, timeZone: string): number {
   return Number.parseInt(h, 10) % 24;
 }
 
-/** 前日の YYYY-MM-DD を返す（tz 非依存の文字列演算）。 */
-export function previousDate(ymd: string): string {
-  const [y, m, d] = ymd.split("-").map(Number) as [number, number, number];
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() - 1);
-  return dt.toISOString().slice(0, 10);
-}
-
 export function isValidYmd(s: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
   const [y, m, d] = s.split("-").map(Number) as [number, number, number];

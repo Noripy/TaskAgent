@@ -9,6 +9,8 @@ export interface Bindings {
   GEMINI_MODEL: string;
   GEMINI_API_KEY: string;
   GEMINI_BASE_URL?: string;
+  /** "1" のときネットワークを使わないフェイク LLM を使う（オフライン開発用。production では禁止）。 */
+  GEMINI_FAKE?: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   GITHUB_OAUTH_SCOPE: string;
@@ -41,7 +43,13 @@ const REQUIRED: Array<keyof Bindings> = [
 ];
 
 export function assertEnv(env: Bindings): void {
-  const missing = REQUIRED.filter((k) => !env[k]);
+  const fake = env.GEMINI_FAKE === "1";
+  if (fake && env.APP_ENV === "production") {
+    throw new Error("GEMINI_FAKE は production では使えません（本物の Gemini を呼んでください）");
+  }
+  // フェイク LLM のときは API キーを要求しない（キー無しでオフライン開発できるように）
+  const required = fake ? REQUIRED.filter((k) => k !== "GEMINI_API_KEY") : REQUIRED;
+  const missing = required.filter((k) => !env[k]);
   if (missing.length) throw new Error(`Missing bindings: ${missing.join(", ")}`);
 }
 

@@ -1,0 +1,45 @@
+# ローカル開発は Docker に寄せ、ホストに Node.js / pnpm を入れなくても動くようにする。
+# 使い方は docs/dev/setup.md、落とし穴は docs/notes/docker-dev.md。
+name: taskagent
+
+# 3 サービスとも同じ dev イメージを使う（開発と検証で環境がズレない）
+x-dev: &dev
+  build:
+    context: .
+    target: dev
+  init: true
+  volumes:
+    # ソースはホストと共有する（保存すると即 HMR）
+    - .:/app
+    # node_modules はコンテナ側に隔離する。ホストの OS/CPU 向けバイナリを持ち込まない
+    - node_modules:/app/node_modules
+    # ローカル D1 の実体。コンテナを作り直してもデータを残す
+    - wrangler_state:/app/.wrangler
+  environment:
+    # macOS / Windows のバインドマウントはファイル変更が届かないことがある。
+    # HMR が効かないときだけ VITE_USE_POLLING=1 を設定する
+    VITE_USE_POLLING: ${VITE_USE_POLLING:-}
+
+services:
+  # 開発サーバー: http://localhost:5173
+  app:
+    <<: *dev
+    ports:
+      - "${DEV_PORT:-5173}:5173"
+    command: pnpm dev
+
+  # CI と同じ検証を手元で回す: pnpm docker:verify
+  verify:
+    <<: *dev
+    profiles: ["tools"]
+    command: pnpm verify
+
+  # wrangler / マイグレーションなどを叩く作業用シェル: pnpm docker:shell
+  cli:
+    <<: *dev
+    profiles: ["tools"]
+    command: bash
+
+volumes:
+  node_modules:
+  wrangler_state:
