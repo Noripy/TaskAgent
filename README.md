@@ -74,25 +74,81 @@ pnpm test:workers    # workerd + D1 の結合テスト
 アプリはリポジトリ直下に置き、フォルダで層を分けています（旧 `task-agent/` サブディレクトリは廃止）。
 
 ```
-src/core             純粋ロジック（zod スキーマ・プロンプト・Markdown 描画・日付）。Cloudflare / React に依存しない
-src/server           Cloudflare Worker: Hono ルート / D1 リポジトリ / Gemini・GitHub クライアント / Cron ジョブ
-src/client           React SPA（投げる / 今日 / 設定）。API は Hono RPC で型付き
-migrations           D1 マイグレーション（追記のみ）
-test/core            src/core の単体テスト
-test/unit            fetch モックの単体テスト（Gemini / GitHub / 暗号）
-test/workers         workerd 上の結合テスト（D1 実物）
-docs/design-docs     構成図・業務フロー・ER・技術選定・UI 設計・ADR
-docs/dev             開発フロー（AI-DLC / TDD）・ローカルセットアップ
-docs/ops             環境構築手順書（Cloudflare / Terraform）
-docs/notes           備考: ノウハウ集（並行開発・Terraform・Mermaid・無料枠・学びの運用）
-docs/product         ペルソナ・用語集
-infra/terraform      D1・AI Gateway の IaC（state は R2）。Worker 本体は wrangler
-.claude              Claude Code 用の設定・ルール・スキル・サブエージェント・フック・学びの台帳（MEMORY.md）
-.github/workflows    CI（verify）/ Deploy（main → wrangler deploy）/ Infra（terraform plan、apply は手動）
-wrangler.jsonc       Cloudflare の設定（D1 バインディング・Cron）
+TaskAgent/
+├── src/                        アプリ本体
+│   ├── core/                   純粋ロジック。Cloudflare / React に依存しない（tsconfig.core.json が型で保証）
+│   │   ├── memo.ts             メモの zod スキーマ（事実 / Keep / Try / 最初の一歩 / 報連相 / 伝え方）
+│   │   ├── protocol.ts         Gemini とのやり取り（質問ラリー・インサイト）の検証
+│   │   ├── prompts.ts          システムプロンプト（安定部分を先頭に置きキャッシュを効かせる）
+│   │   ├── markdown.ts         日次 Markdown の描画
+│   │   ├── dates.ts            タイムゾーン付きの日付処理
+│   │   └── index.ts            core の公開窓口
+│   ├── server/                 Cloudflare Worker（Hono）
+│   │   ├── index.ts            Worker のエントリ（fetch + Cron の scheduled）
+│   │   ├── app.ts              Hono アプリの組み立てと認証ミドルウェア
+│   │   ├── env.ts              バインディング定義・Deps 注入・assertEnv
+│   │   ├── routes/             auth / captures / memos / digests / settings
+│   │   ├── services/           memoize（投げる → 質問 → メモ の進行）
+│   │   ├── jobs/               digest（毎時 Cron の冪等な日次コミット）
+│   │   ├── lib/                gemini / gemini-fake / gemini-factory / github / crypto / session
+│   │   └── db/repo.ts          D1 アクセス（SQL はここだけ）
+│   └── client/                 React SPA。API は Hono RPC で型付き
+│       ├── main.tsx            エントリ
+│       ├── App.tsx             画面の切り替えとおつかれモード
+│       ├── api.ts              hc<AppType> のクライアント
+│       ├── pages/              Login / Capture（投げる）/ Today（今日）/ Settings（設定）
+│       ├── components/         Layout / MemoCard / CopyButton
+│       └── styles.css          デザイントークン（大きい文字・コントラスト・おつかれモード）
+│
+├── test/                       テスト（pnpm test:unit → core + unit、pnpm test:workers → workers）
+│   ├── core/                   src/core の単体テスト
+│   ├── unit/                   fetch モックの単体テスト（Gemini / GitHub / 暗号 / スクリプト）
+│   ├── workers/                workerd + 実物の D1 での結合テスト
+│   └── fixtures/memo.ts        テスト共通のメモ見本（スキーマ変更はここ 1 箇所）
+│
+├── migrations/                 D1 マイグレーション（追記のみ・既存ファイルは編集しない）
+│   └── 0001_init.sql           users / sessions / captures / conversation_turns / memos / daily_digests
+│
+├── docs/
+│   ├── design-docs/            01 構成図 / 02 業務フロー / 03 ER / 04 技術選定 / 05 UI 設計 / 06 CI・CD
+│   │   └── adr/                設計判断の記録（0001〜0008）
+│   ├── dev/                    ai-dlc.md（開発フロー）/ setup.md（セットアップ）
+│   ├── ops/                    cloudflare-setup.md（本番の環境構築手順書）
+│   ├── notes/                  備考: Docker / 並行開発 / Terraform / Mermaid / 無料枠 / 学びの運用
+│   └── product/                persona.md（ペルソナと設計原則）/ glossary.md（用語集）
+│
+├── infra/terraform/            D1・AI Gateway の IaC（state は R2）。Worker 本体は wrangler
+│
+├── scripts/                    check-claude-md / check-bundle-size / sync-wrangler-from-terraform / worktree
+│
+├── .claude/                    Claude Code 用の設定
+│   ├── MEMORY.md               学びの台帳（ハマりを hooks / rules / docs へ昇格する）
+│   ├── rules/                  パス別ルール（該当ファイルを触るときだけ読まれる）
+│   ├── skills/                 /tdd /learn /design-sync /pr-ready
+│   ├── agents/                 reviewer / test-writer
+│   ├── hooks/                  整形・マイグレーション保護・起動時提示・終了時検査
+│   └── settings.json           権限の allow / deny とフックの登録
+│
+├── .github/
+│   ├── workflows/              ci.yml（dev イメージ内で verify）/ deploy.yml / infra.yml
+│   ├── pull_request_template.md
+│   └── CODEOWNERS
+│
+├── Dockerfile                  base → deps → dev / ci の 4 ステージ（glibc 必須・alpine 不可）
+├── compose.yaml                app（開発サーバー）/ verify / cli
+├── .dockerignore               秘密と成果物をイメージに入れない
+├── wrangler.jsonc              Cloudflare の設定（D1 バインディング・Cron・Static Assets）
+├── vite.config.ts              Vite + Cloudflare プラグイン（コンテナ向けの host 設定）
+├── vitest.unit.config.ts       単体テストの設定
+├── vitest.workers.config.ts    workerd 結合テストの設定
+├── tsconfig.*.json             base / core（types 空）/ server / client / node の 5 構成
+├── biome.json                  lint と整形
+├── package.json                スクリプトと依存
+├── CLAUDE.md                   AI エージェント向けの指示（人が読んでも短い）
+└── .dev.vars.example           ローカルの環境変数のひな形（コピーして .dev.vars に）
 ```
 
-`src/core` は `tsconfig.core.json`（Workers / DOM の型を読み込まない設定）で型チェックされるため、Cloudflare 依存が混ざるとコンパイルで落ちます。
+読む順番に迷ったら、`src/core/memo.ts`（何を記録するか）→ `src/server/services/memoize.ts`（どう作るか）→ `src/server/jobs/digest.ts`（どう届けるか）の 3 ファイルです。
 
 ## 注意（社外秘の扱い）
 
