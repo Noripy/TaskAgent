@@ -41,13 +41,24 @@ VITE_USE_POLLING=1 pnpm docker:dev
 ### 5. ファイルの所有者が root になる（Linux ホスト）
 `dev` ステージは `node` ユーザー（uid 1000）で動きます。ホストのユーザーが uid 1000 でない場合、コンテナが作ったファイルの所有者がずれます。`id -u` が 1000 でなければ、`Dockerfile` の `USER node` を外すか、ホスト側で `sudo chown -R $USER:$USER .` します。
 
-### 6. `.dockerignore` を書き忘れると秘密が焼き込まれる
+### 6. `.dockerignore` の除外が「CI でだけ落ちる」原因になる
+`ci` ステージは `COPY . .` でソースを入れるため、**`.dockerignore` で除外したファイルはイメージの中に存在しません**。
+検証に必要なファイルを除外すると、ローカルでは通るのに CI だけ落ちます。実際に `.github` を除外して `pnpm check:docs` が落ちました（`.claude/rules/tooling.md` の `paths` が `.github/workflows` を参照しているため）。
+
+再現方法（Docker が無くても確かめられる）:
+
+```bash
+tar -cf - --exclude=.git --exclude=node_modules --exclude=dist . | (mkdir -p /tmp/imgsim && cd /tmp/imgsim && tar -xf -)
+cd /tmp/imgsim && node scripts/check-claude-md.mjs
+```
+
+### 7. `.dockerignore` を書き忘れると秘密が焼き込まれる
 `ci` ステージは `COPY . .` でソースを丸ごと入れます。`.dev.vars` や `infra/terraform/*.tfvars` は `.dockerignore` で必ず除外します（追加したら見直す）。
 
-### 7. CI で Docker Hub の pull が 429 になる
+### 8. CI で Docker Hub の pull が 429 になる
 GitHub Actions の runner は共有 IP から匿名 pull するため、レート制限に当たることがあります。頻発したら `docker/login-action` でログインしてから pull します。
 
-### 8. イメージのビルドが毎回遅い
+### 9. イメージのビルドが毎回遅い
 `Dockerfile` は `deps` ステージを分けており、`package.json` と `pnpm-lock.yaml` が変わらなければ `pnpm install` は再実行されません。遅いときは、ソースの変更で `deps` 層が壊れていないか（`COPY` の順番）を疑います。
 
 ## オフライン開発

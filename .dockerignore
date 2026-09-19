@@ -15,8 +15,10 @@ coverage
 *.tsbuildinfo
 
 # イメージに要らないもの
+# .git は除外してよい（Biome は .git 無しでも動くことを確認済み）。
+# .github は除外しない: check:docs が .claude/rules の paths として .github/workflows を検証するため、
+# 除外するとイメージ内でだけ verify が落ちる（実際に CI で踏んだ）。
 .git
-.github
 .claude/settings.local.json
 infra/terraform/.terraform
 **/*.log

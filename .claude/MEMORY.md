@@ -30,3 +30,4 @@
 | 2026-09-19 | スキーマに 1 フィールド足すだけで 4 つのテストファイルの literal を直す羽目になった。テストの fixture は共有する | `test/fixtures/memo.ts`, `.claude/skills/tdd/SKILL.md` | 反映済 |
 | 2026-09-19 | 本番から呼ばれないエンドポイントや repo メソッドが溜まっていた。`grep` の件数が 1 なら定義だけ = 死んだコード | `.claude/skills/tdd/SKILL.md`（Refactor 手順） | 反映済 |
 | 2026-09-19 | `exactOptionalPropertyTypes: true` では `watch: undefined` を明示できない。条件付きスプレッドで足す | `vite.config.ts` のコメント | 反映済 |
+| 2026-09-19 | `.dockerignore` で `.github` を除外したら、イメージ内でだけ `pnpm check:docs` が落ちた。検証に使うファイルを除外しない | `.dockerignore` のコメント, `docs/notes/docker-dev.md` | 反映済 |
