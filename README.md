@@ -63,9 +63,10 @@ pnpm test:unit       # 高速な単体テスト（src/core + fetch モック）
 pnpm test:workers    # workerd + D1 の結合テスト
 ```
 
-- 開発の進め方（TDD / AI-DLC / Claude Code の使い方）: [docs/dev/ai-dlc.md](docs/dev/ai-dlc.md)
+- 開発の進め方（計画 → TDD / AI-DLC / Claude Code の使い方）: [docs/dev/ai-dlc.md](docs/dev/ai-dlc.md)
+- 実装時の設計原則（KISS / PIE / SLAP / OCP）: [docs/notes/design-principles.md](docs/notes/design-principles.md)
 - 本番環境の構築手順書（Terraform + wrangler）: [docs/ops/cloudflare-setup.md](docs/ops/cloudflare-setup.md)
-- 備考（ノウハウ集: 並行開発 / Terraform / Mermaid / 無料枠の落とし穴 / 学びの運用）: [docs/notes/](docs/notes/README.md)
+- 備考（ノウハウ集: 設計原則 / Docker / 並行開発 / Terraform / Mermaid / 無料枠の落とし穴 / 学びの運用）: [docs/notes/](docs/notes/README.md)
 - 学びの台帳: [.claude/MEMORY.md](.claude/MEMORY.md)（ハマったら 1 行書いて `/learn` で昇格）
 - AI エージェント向けの指示: [CLAUDE.md](CLAUDE.md)（パス別ルールは `.claude/rules/`）
 
@@ -114,7 +115,7 @@ TaskAgent/
 │   │   └── adr/                設計判断の記録（0001〜0008）
 │   ├── dev/                    ai-dlc.md（開発フロー）/ setup.md（セットアップ）
 │   ├── ops/                    cloudflare-setup.md（本番の環境構築手順書）
-│   ├── notes/                  備考: Docker / 並行開発 / Terraform / Mermaid / 無料枠 / 学びの運用
+│   ├── notes/                  備考: 設計原則 / Docker / 並行開発 / Terraform / Mermaid / 学びの運用
 │   └── product/                persona.md（ペルソナと設計原則）/ glossary.md（用語集）
 │
 ├── infra/terraform/            D1・AI Gateway の IaC（state は R2）。Worker 本体は wrangler
@@ -124,7 +125,7 @@ TaskAgent/
 ├── .claude/                    Claude Code 用の設定
 │   ├── MEMORY.md               学びの台帳（ハマりを hooks / rules / docs へ昇格する）
 │   ├── rules/                  パス別ルール（該当ファイルを触るときだけ読まれる）
-│   ├── skills/                 /tdd /learn /design-sync /pr-ready
+│   ├── skills/                 /plan /tdd /learn /design-sync /pr-ready
 │   ├── agents/                 reviewer / test-writer
 │   ├── hooks/                  整形・マイグレーション保護・起動時提示・終了時検査
 │   └── settings.json           権限の allow / deny とフックの登録

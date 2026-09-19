@@ -7,7 +7,7 @@
 
 ```mermaid
 flowchart LR
-  I["Intent<br/>やりたいことを 1〜3 行で書く"] --> P["Plan<br/>Claude に plan mode で設計させ、人が承認"]
+  I["Intent<br/>やりたいことを 1〜3 行で書く"] --> P["Plan<br/>/plan でなぜ・影響範囲・<br/>最小案と代替案を提示"]
   P --> T["Test first<br/>/tdd で失敗するテストを先に"]
   T --> C["Code<br/>最小実装で緑に"]
   C --> V["Verify<br/>pnpm verify（lint/型/テスト/ビルド）"]
@@ -22,8 +22,8 @@ flowchart LR
 | 段階 | 人がやる | AI がやる |
 |---|---|---|
 | Intent | 書く。「誰の・何の困りごとを・どう減らすか」 | 曖昧なら質問する |
-| Plan | 承認 / 却下 | 変更ファイル・テスト方針・図への影響を列挙 |
-| Test / Code | 見ない（結果だけ見る） | Red → Green → Refactor |
+| Plan | 案を選ぶ（承認 / 却下 / 別案） | `/plan` の型で なぜ・影響範囲・最小案と代替案 2 つ以上・テスト方針・確認方法を出す |
+| Test / Code | 見ない（結果だけ見る） | Red → Green → Refactor。実装中は KISS・PIE・SLAP・OCP（`docs/notes/design-principles.md`） |
 | Verify | 見ない | `pnpm verify` を通す |
 | Review | 差分を読む（10 分以内で読める粒度に PR を切る） | reviewer サブエージェントで一次レビュー |
 | Docs | 図の意味を確認 | Mermaid を更新 |
@@ -49,7 +49,7 @@ flowchart LR
 | PreToolUse フック | `.claude/hooks/guard-migrations.sh` | 適用済みマイグレーションの改変と秘密ファイルへの書き込みをブロック |
 | PostToolUse フック | `.claude/hooks/format-changed.sh` | 編集したファイルだけ Biome 整形（全体 lint より速い） |
 | パス別ルール | `.claude/rules/*.md` | 触るファイルに応じて必要なルールだけ読み込まれる |
-| スキル | `.claude/skills/` | `/tdd` `/design-sync` `/pr-ready` の定型手順 |
+| スキル | `.claude/skills/` | `/plan` `/tdd` `/learn` `/design-sync` `/pr-ready` の定型手順 |
 | サブエージェント | `.claude/agents/` | `reviewer`（読み取り専用）と `test-writer`（テストのみ書く） |
 | 型で守る | Hono RPC + zod | API のズレ・LLM 出力の崩れをビルド/実行時に検出 |
 | CI | `.github/workflows/ci.yml` | 速い順に並列（lint/型 → 単体 → 結合 → ビルド + バンドルサイズ検査） |

@@ -30,15 +30,17 @@ pnpm cf:deploy     # 手動デプロイ（script 名を deploy にすると pnpm
 ```
 
 ## 開発ルール（短く・守る）
-1. **TDD**: 失敗するテストを先に書き、最小実装で通し、リファクタ。`src/core` はテストなしの変更を禁止。
-2. 外部 I/O（fetch / 時刻 / ID）は `Deps` 経由で注入。テストで本物のネットワークを叩かない。
-3. LLM の出力は必ず zod（`MemoSchema` 等）で検証してから保存。
-4. 秘密情報は `wrangler secret` / `.dev.vars` のみ。コードやドキュメントに書かない。
-5. 1 PR = 1 関心事。`src/core` と `src/server` / `src/client` を同時に大改修しない。
-6. 迷ったら `docs/product/persona.md` のユーザー（20 代・完璧主義・過集中）にとって「最初の一歩が小さくなるか」で判断。
-7. UI は `docs/design-docs/05-ui-design.md` の原則（大きい文字・固定した読む順番・二次情報は `.ta-secondary`）に従う。
-8. **学びは台帳へ**: ハマったら `.claude/MEMORY.md` に 1 行書き、`/learn` で hooks / rules / settings / CLAUDE.md / `docs/notes` のどれかに同じコミットで昇格する。「未反映」のまま終えると Stop フックが差し戻す。
-9. scripts・フォルダ・ルールを変えたら、この CLAUDE.md も同じ PR で直す（`pnpm check:docs` がズレを検知する）。
-10. 実行環境を変える（依存追加・Node/pnpm 更新）ときは `Dockerfile` も同じ PR で更新し、`pnpm docker:verify` を通す。CI は同じイメージで動く。
+1. **計画してから書く**: 改修・新規実装は `/plan` で「なぜ必要か・影響範囲・最小案と代替案 2 つ以上・テスト方針」を先に出す。
+2. **TDD**: 失敗するテストを先に書き、最小実装で通し、リファクタ。`src/core` はテストなしの変更を禁止。
+   実装中は KISS・PIE・SLAP・OCP を当てる（`docs/notes/design-principles.md`）。
+3. 外部 I/O（fetch / 時刻 / ID）は `Deps` 経由で注入。テストで本物のネットワークを叩かない。
+4. LLM の出力は必ず zod（`MemoSchema` 等）で検証してから保存。
+5. 秘密情報は `wrangler secret` / `.dev.vars` のみ。コードやドキュメントに書かない。
+6. 1 PR = 1 関心事。`src/core` と `src/server` / `src/client` を同時に大改修しない。
+7. 迷ったら `docs/product/persona.md` のユーザー（20 代・完璧主義・過集中）にとって「最初の一歩が小さくなるか」で判断。
+8. UI は `docs/design-docs/05-ui-design.md` の原則（大きい文字・固定した読む順番・二次情報は `.ta-secondary`）に従う。
+9. **学びは台帳へ**: ハマったら `.claude/MEMORY.md` に 1 行書き、`/learn` で hooks / rules / settings / CLAUDE.md / `docs/notes` のどれかに同じコミットで昇格する。「未反映」のまま終えると Stop フックが差し戻す。
+10. scripts・フォルダ・ルールを変えたら、この CLAUDE.md も同じ PR で直す（`pnpm check:docs` がズレを検知する）。
+11. 実行環境を変える（依存追加・Node/pnpm 更新）ときは `Dockerfile` も同じ PR で更新し、`pnpm docker:verify` を通す。CI は同じイメージで動く。
 
 詳細ルールはパス別に `.claude/rules/` に分割されている（該当ファイルを触るときだけ読み込まれる）。

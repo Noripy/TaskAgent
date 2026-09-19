@@ -31,3 +31,5 @@
 | 2026-09-19 | 本番から呼ばれないエンドポイントや repo メソッドが溜まっていた。`grep` の件数が 1 なら定義だけ = 死んだコード | `.claude/skills/tdd/SKILL.md`（Refactor 手順） | 反映済 |
 | 2026-09-19 | `exactOptionalPropertyTypes: true` では `watch: undefined` を明示できない。条件付きスプレッドで足す | `vite.config.ts` のコメント | 反映済 |
 | 2026-09-19 | `.dockerignore` で `.github` を除外したら、イメージ内でだけ `pnpm check:docs` が落ちた。検証に使うファイルを除外しない | `.dockerignore` のコメント, `docs/notes/docker-dev.md` | 反映済 |
+| 2026-09-19 | 実装しながら設計を決めていたため、レビューできるのが完成した差分だけになっていた。書く前に「なぜ・案の比較」を出す段が要る | `.claude/skills/plan/SKILL.md`, `/tdd` の Plan 段, `CLAUDE.md` ルール 1 | 反映済 |
+| 2026-09-19 | Refactor の判断軸が YAGNI・DRY しか言語化されていなかった。KISS・PIE・SLAP・OCP を実コードの例つきで足した | `docs/notes/design-principles.md`, `.claude/agents/reviewer.md` | 反映済 |
